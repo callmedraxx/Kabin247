@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: kabin_phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      # Connect to MySQL running on host machine
+      PMA_HOST: host.docker.internal
+      PMA_PORT: 3306
+      # Pre-fill login form (optional - remove for security)
+      PMA_USER: kabin_user
+      PMA_PASSWORD: kabin_pass_2024
+      # Enable uploads
+      UPLOAD_LIMIT: 300M
+    restart: unless-stopped
+    networks:
+      - phpmyadmin_network
+
+networks:
+  phpmyadmin_network:
+    driver: bridge
+
+

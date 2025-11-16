@@ -1,0 +1,23 @@
+@let(branding = await useBranding())
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="{{branding?.business?.favicon?.url}}" />
+
+    <title inertia>
+      {{branding?.business?.name}}
+    </title>
+
+    @viteReactRefresh()
+    @inertiaHead()
+    @vite(['inertia/app/app.tsx', `inertia/pages/${page.component}.tsx`, 'inertia/scss/app.scss'])
+  </head>
+
+  <body class="min-h-screen w-screen font-inter">
+    @inertia()
+  </body>
+
+</html>

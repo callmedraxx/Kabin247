@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 149.88 164.17">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        stroke: #f7941d;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-5 {
+        fill: #f1f2f2;
+      }
+
+      .cls-6 {
+        fill: #f7941d;
+      }
+
+      .cls-3 {
+        fill: #ffdcb6;
+      }
+
+      .cls-4 {
+        fill: #ffedde;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <ellipse class="cls-5" cx="74.51" cy="159.13" rx="60.95" ry="5.04"/>
+      <line class="cls-1" x1="63.51" y1="160.45" x2="63.51" y2="135.88"/>
+      <line class="cls-1" x1="84.48" y1="158.23" x2="84.48" y2="131.85"/>
+      <polygon class="cls-3" points="117.32 1.91 117.32 10.78 102.53 5.51 117.32 1.91"/>
+      <path class="cls-3" d="m28,6.08l-6.69,8.41v119.96l-1.98-7.49-7.02-1.52s-.22-16.03-.3-36.63c-.15-35.1.07-83.47,2.37-88.3l13.62,5.56Z"/>
+      <path class="cls-4" d="m127.7,14.49c-3.38.56-6.85,1.04-10.39,1.44-43.65,5.02-96.01-1.44-96.01-1.44l6.69-8.41L14.38.52S97.53.21,117.32,1.91l-14.79,3.6,14.79,5.27,10.39,3.71Z"/>
+      <path class="cls-1" d="m.3,100.2s13.77-10.45,18.52-22.32"/>
+      <path class="cls-1" d="m149.79,83.87s-16.39,2.79-26.68-22.15"/>
+      <path class="cls-2" d="m127.7,14.49l-.67,55.06-.79,64.67s-14.07,2.51-41.77,2.31c-6.28-.05-13.27-.24-20.97-.64-.43-.02-.88-.04-1.32-.06-29.97-1.6-40.88-1.37-40.88-1.37V14.49s52.36,6.46,96.01,1.44c3.54-.4,7.01-.88,10.39-1.44Z"/>
+      <ellipse class="cls-6" cx="57.03" cy="60.02" rx="3.12" ry="3.75"/>
+      <ellipse class="cls-6" cx="95.09" cy="58.67" rx="3.12" ry="3.75"/>
+      <line class="cls-1" x1="57.11" y1="83.96" x2="94" y2="78.88"/>
+    </g>
+  </g>
+</svg>

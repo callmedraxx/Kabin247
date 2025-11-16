@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Order Details
+    </title>
+  </head>
+  <body style="Margin:0;padding:0;background:#ffffff;color:#111;font-family:Arial,Helvetica,sans-serif;">
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="border-collapse:collapse;"
+    >
+      <tr>
+        <td style="height:6px;background:#111;">
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="padding:18px 10px;">
+          <table
+            role="presentation"
+            width="640"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="border-collapse:collapse;width:640px;"
+          >
+            <tr>
+              <td align="center" style="padding:12px 0 4px 0;">
+                <img
+                  src="{{ 'https://app.kabin247.com/logo.png' || businessInfo?.logo?.url || baseUrl }}"
+                  alt="{{ businessInfo?.name || 'Logo' }}"
+                  width="200"
+                  style="display:block;border:0;height:auto;max-width:200px;"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="font-size:14px;color:#222;padding-bottom:12px;">
+                <div style="font-weight:bold;letter-spacing:1px;">
+                  {{ businessInfo?.name || '' }}
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="font-size:13px;color:#111;padding:8px 0;">
+                <div>
+                  Order #: <strong>{{ order?.orderNumber }}</strong>
+                </div>
+                <div>
+                  Date: <strong>{{ formattedDate || 'N/A' }}</strong>
+                </div>
+                <div>
+                  Delivery Location:
+                  @if(order?.deliveryAirport?.iataCode || order?.deliveryAirport?.icaoCode)
+                    <strong>{{ order?.deliveryAirport?.iataCode || '' }}{{ (order?.deliveryAirport?.iataCode && order?.deliveryAirport?.icaoCode) ? ' - ' : '' }}{{ order?.deliveryAirport?.icaoCode || '' }}</strong>
+                  @else
+                    <strong>N/A</strong>
+                  @endif
+                </div>
+                <div>
+                  Delivery Date: <strong>{{ order?.deliveryDate || 'N/A' }}</strong>                  
+                    <strong>{{ order.deliveryTime || ''}}</strong>
+                </div>
+                <div>
+                  Tail#: <strong>{{ order?.tailNumber || 'N/A' }}</strong>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding-top:10px;">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="border-collapse:collapse;"
+                >
+                  <tr>
+                    <td style="background:#0b63c9;color:#fff;font-weight:bold;padding:8px;border:1px solid #0b63c9;">
+                      Item
+                    </td>
+                    <td
+                      width="120"
+                      style="background:#0b63c9;color:#fff;font-weight:bold;padding:8px;border:1px solid #0b63c9;text-align:center;"
+                    >
+                      Packaging
+                    </td>
+                    <td
+                      width="120"
+                      style="background:#0b63c9;color:#fff;font-weight:bold;padding:8px;border:1px solid #0b63c9;text-align:center;"
+                    >
+                      Qty
+                    </td>
+                  </tr>
+
+                  @each(it in (items || []))
+                    <tr>
+                      <td style="border:1px solid #e1e5ea;padding:8px;font-size:13px;">
+                        <div style="font-weight:bold">
+                          {{ it.name }}
+                        </div>
+                        @if(it.variants && it.variants.length)
+                          <div style="margin-top:4px;font-size:12px;color:#444;">
+                            - {{ it.variants.join(', ') }}
+                          </div>
+                        @endif
+                        @if(it.addons && it.addons.length)
+                          <div style="margin-top:2px;font-size:12px;color:#444;">
+                            • {{ it.addons.join(', ') }}
+                          </div>
+                        @endif
+                      </td>
+                      <td align="center" style="border:1px solid #e1e5ea;padding:8px;font-size:13px;">
+                        {{ it.packaging }}
+                      </td>
+                      <td align="center" style="border:1px solid #e1e5ea;padding:8px;font-size:13px;">
+                        {{ it.qty }}
+                      </td>
+                    </tr>
+                  @endeach
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding-top:10px;font-size:13px;">
+                <div>
+                  Client Note: <strong>{{ order?.note || 'Not provided' }}</strong>
+                </div>
+                <div>
+                  Packaging Note: <strong>{{ order?.packagingNote || 'Not provided' }}</strong>
+                </div>
+                @if(order?.dietaryRes)
+                  <div style="color:#c20000;font-weight:bold;">
+                    Dietary Restrictions: <span style="color:#c20000;">{{ order.dietaryRes }}</span>
+                  </div>
+                @else
+                  <div>
+                    Dietary Restrictions: <strong style="color:#c20000;">No specific restriction</strong>
+                  </div>
+                @endif
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:16px 0 8px 0;font-size:12px;color:#888;">
+                Please prepare and deliver on time. Thank you!
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Invoice
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body style="Margin:0;padding:0;background:#ffffff;color:#111111;">
+    <!-- Top rule -->
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="border-collapse:collapse;"
+    >
+      <tr>
+        <td style="height:6px;background:#111111;">
+        </td>
+      </tr>
+    </table>
+
+    <!-- Outer container -->
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="border-collapse:collapse;"
+    >
+      <tr>
+        <td align="center" style="padding:18px 10px;">
+          <table
+            role="presentation"
+            width="640"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="border-collapse:collapse;width:640px;"
+          >
+
+            <!-- Logo & Business -->
+            <tr>
+              <td align="center" style="padding:12px 0 14px 0;">
+                <img
+                  src="{{ 'https://app.kabin247.com/logo.png' || businessInfo?.logo?.url || baseUrl }}"
+                  alt="{{ businessInfo?.name || 'Logo' }}"
+                  width="240"
+                  style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:240px;"
+                />
+              </td>
+            </tr>
+            <tr>
+            </tr>
+
+            <!-- Header two columns -->
+            <tr>
+              <td>
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="border-collapse:collapse;"
+                >
+                  <tr>
+                    <!-- Left: Invoice box -->
+                    <td valign="top" width="260" style="padding:0 10px 10px 0;">
+                      <table
+                        role="presentation"
+                        width="100%"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                        style="border:1px solid #e1e5ea;border-collapse:collapse;"
+                      >
+                        <tr>
+                          <td
+                            style="background:#f2f6fb;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1a3d7c;font-weight:bold;"
+                          >
+                            INVOICE
+                          <span style="color:#0080ff;margin-left:6px;">Number: {{ order?.orderNumber || 'N/A' }}</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#333;">
+                            <div style="color:#c20000;font-weight:bold;margin-bottom:6px;">
+                              Time Change Confirmed
+                            </div>
+                            <div>
+                              {{ businessInfo?.phone || 'N/A' }}
+                            </div>
+                            <div>
+                              {{ businessInfo?.email || 'N/A' }}
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+
+                    <!-- Right: Delivery block -->
+                    <td valign="top" width="380" style="padding:0 0 10px 10px;">
+                      <table
+                        role="presentation"
+                        width="100%"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                        style="border-collapse:collapse;"
+                      >
+                        <tr>
+                          <td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#333;line-height:20px;">
+                            <div>
+                              Date: <strong>{{ formattedDate || 'N/A' }}</strong>
+                            </div>
+                            <div>
+                              Delivery Location:
+                              @if(order?.deliveryAirport?.iataCode || order?.deliveryAirport?.icaoCode)
+                                <a href="#" style="color:#0b63c9;text-decoration:underline;">
+                                  {{ order?.deliveryAirport?.iataCode || 'N/A' }}{{ (order?.deliveryAirport?.iataCode && order?.deliveryAirport?.icaoCode) ? ' - ' : '' }}{{ order?.deliveryAirport?.icaoCode || 'N/A' }}
+                              </a>
+                              @else
+                                <span>N/A</span>
+                              @endif
+                            </div>
+                            <div>
+                              Delivery Date:
+                            <strong>{{ order?.deliveryDate || 'N/A' }}</strong>
+                              @if(order?.deliveryTime)
+                                <strong>{{ order.deliveryTime }}</strong>
+                              @endif
+                            </div>
+                            <div>
+                              Tail# Number: <strong style="color:#c20000;">{{ order?.tailNumber || 'N/A' }}</strong>
+                            </div>
+
+                            <div style="margin-top:10px;">
+                              <div>
+                                Client Note:
+                              <strong style="color:#111;">{{ order?.note || 'Not provided' }}</strong>
+                              </div>
+                              <div>
+                                Packaging Note:
+                              <strong style="color:#111;">{{ order?.packagingNote || 'Not provided' }}</strong>
+                              </div>
+                              @if(order?.dietaryRes)
+                                <div style="color:#c20000;font-weight:bold;">
+                                  Dietary Restrictions:
+                                <span style="color:#c20000;">{{ order.dietaryRes }}</span>
+                                </div>
+                              @else
+                                <div>
+                                  Dietary Restrictions: <strong style="color:#c20000;">No specific restriction</strong>
+                                </div>
+                              @endif
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Items table header -->
+            <tr>
+              <td style="padding-top:6px;">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="border-collapse:collapse;"
+                >
+                  <tr>
+                    <td
+                      style="background:#0b63c9;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;padding:10px;border:1px solid #0b63c9; max-width: 220px;"
+                    >
+                      Items Requested
+                    </td>
+                    <td
+                      style="background:#0b63c9;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;padding:10px;border:1px solid #0b63c9;text-align:center; max-width: 80px;"
+                    >
+                      Packaging
+                    </td>
+                    <td
+                      style="background:#0b63c9;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;padding:10px;border:1px solid #0b63c9;text-align:center;white-space:wrap; max-width: 80px;"
+                    >
+                      Portions / Servings
+                    </td>
+                    <td
+                      style="background:#0b63c9;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;padding:10px;border:1px solid #0b63c9;text-align:center;"
+                    >
+                      Unit Cost
+                    </td>
+                    <td
+                      style="background:#0b63c9;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;padding:10px;border:1px solid #0b63c9;text-align:center; max-width: 80px;"
+                    >
+                      Item Cost
+                    </td>
+                  </tr>
+
+                  <!-- Item rows (use itemsForPrint prepared in controller) -->
+                  @if((itemsForPrint || []).length)
+                    @each(it in itemsForPrint)
+                      <tr>
+                        <td
+                          valign="top"
+                          style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                        >
+                          <div style="font-weight:bold">
+                            {{ it.name || 'N/A' }}
+                          </div>
+                          @if(it.description)
+                            <div style="color:#666;font-size:12px;">
+                              {{ it.description }}
+                            </div>
+                          @endif
+                          
+                          @each(line in (it.variantLines || []))
+                            <div style="margin-top:4px;font-size:12px;color:#444;">
+                              {{ line }}
+                            </div>
+                          @endeach
+                          
+                          @if(it.addonLine)
+                            <div style="margin-top:4px;font-size:12px;color:#444;">
+                              • {{ it.addonLine }}
+                            </div>
+                          @endif
+                        </td>
+                        <td
+                          valign="top"
+                          align="center"
+                          style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                        >
+                          {{ it.packaging || 'N/A' }}
+                        </td>
+                        <td
+                          valign="top"
+                          align="center"
+                          style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                        >
+                          {{ it.quantity || 0 }}
+                        </td>
+                        <td
+                          valign="top"
+                          align="center"
+                          style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                        >
+                          {{ it.unitCost || '0.00' }}
+                        </td>
+                        <td
+                          valign="top"
+                          align="center"
+                          style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                        >
+                          {{ it.itemCost || '0.00' }}
+                        </td>
+                      </tr>
+                    @endeach
+                  @else
+                    <!-- Fallback if itemsForPrint missing -->
+                    <tr>
+                      <td
+                        colspan="5"
+                        style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                      >
+                        N/A
+                      </td>
+                    </tr>
+                  @endif
+                  
+                  <!-- Order-level charges -->
+                  @each(c in (orderCharges || []))
+                    <tr>
+                      <td
+                        colspan="4"
+                        align="right"
+                        style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                      >
+                        {{ c?.name || 'Charge' }}
+                      </td>
+                      <td
+                        align="center"
+                        style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111; white-space:wrap;"
+                      >
+                        {{ Number(c?.amount || 0).toFixed(2) }}
+                      </td>
+                    </tr>
+                  @endeach
+                  
+                  <!-- Totals -->
+                  <tr>
+                    <td
+                      colspan="4"
+                      align="right"
+                      style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                    >
+                      Subtotal
+                    </td>
+                    <td
+                      align="center"
+                      style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;white-space:wrap;"
+                    >
+                      {{ Number(order?.total || 0).toFixed(2) }}
+                    </td>
+                  </tr>
+
+                  @if(order?.discount && Number(order.discount) > 0)
+                    <tr>
+                      <td
+                        colspan="4"
+                        align="right"
+                        style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                      >
+                        Discount
+                      </td>
+                      <td
+                        align="center"
+                        style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;white-space:wrap;"
+                      >
+                        -{{ Number(order.discount).toFixed(2) }}
+                      </td>
+                    </tr>
+                  @endif
+                  
+                  @if(order?.manualDiscount && Number(order.manualDiscount) > 0)
+                    <tr>
+                      <td
+                        colspan="4"
+                        align="right"
+                        style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;"
+                      >
+                        Additional Discount
+                      </td>
+                      <td
+                        align="center"
+                        style="border:1px solid #e1e5ea;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#111;white-space:wrap;"
+                      >
+                        -{{ Number(order.manualDiscount).toFixed(2) }}
+                      </td>
+                    </tr>
+                  @endif
+                  
+                  <tr>
+                    <td
+                      colspan="4"
+                      align="right"
+                      style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111;font-weight:bold;"
+                    >
+                      Grand Total
+                    </td>
+                    <td
+                      align="center"
+                      style="border:1px solid #e1e5ea;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111;font-weight:bold;white-space:wrap;"
+                    >
+                      {{ Number(order?.grandTotal || 0).toFixed(2) }}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Payment status -->
+            <tr>
+              <td align="right" style="padding-top:8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;">
+                Status:
+              <strong style="color:#0b63c9;">
+                  {{ order?.paymentStatus === 'paid'
+                    ? 'Paid'
+                    : (order?.paymentStatus === 'unpaid' ? 'Unpaid' : 'Payment Requested') }}
+              </strong>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                align="center"
+                style="padding:16px 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#888;"
+              >
+                Thank you for your order!
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
