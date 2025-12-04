@@ -12,8 +12,16 @@ import { attachmentManager } from '@jrmc/adonis-attachment';
 export default class BusinessSetupsController {
   async getDetail({ logger, response }: HttpContext) {
     try {
-      const data = await BusinessSetup.query().firstOrFail();
-      const branding = await Setting.query().where('key', 'branding').firstOrFail();
+      const data = await BusinessSetup.query().first();
+      const branding = await Setting.query().where('key', 'branding').first();
+      
+      if (!data || !branding) {
+        return response.notFound({
+          success: false,
+          message: 'Business setup or branding configuration not found. Please configure your business settings first.',
+        });
+      }
+      
       return response.json({ ...data.serialize(), siteUrl: branding.value1 });
     } catch (error) {
       errorHandler(error, response, logger, 'Get Business Info Error');

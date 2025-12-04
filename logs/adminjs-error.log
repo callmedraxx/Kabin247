@@ -1,0 +1,35 @@
+2025-11-16 18:24:19 +00:00: NotFoundError: Not Found
+2025-11-16 18:24:19 +00:00:     at createHttpError (/root/Kabin247/node_modules/express/node_modules/send/index.js:861:12)
+2025-11-16 18:24:19 +00:00:     at SendStream.error (/root/Kabin247/node_modules/express/node_modules/send/index.js:168:31)
+2025-11-16 18:24:19 +00:00:     at SendStream.pipe (/root/Kabin247/node_modules/express/node_modules/send/index.js:468:14)
+2025-11-16 18:24:19 +00:00:     at sendfile (/root/Kabin247/node_modules/express/lib/response.js:1000:8)
+2025-11-16 18:24:19 +00:00:     at ServerResponse.sendFile (/root/Kabin247/node_modules/express/lib/response.js:409:3)
+2025-11-16 18:24:19 +00:00:     at file:///root/Kabin247/node_modules/@adminjs/express/lib/buildRouter.js:61:17
+2025-11-16 18:24:19 +00:00:     at Layer.handleRequest (/root/Kabin247/node_modules/router/lib/layer.js:152:17)
+2025-11-16 18:24:19 +00:00:     at next (/root/Kabin247/node_modules/router/lib/route.js:157:13)
+2025-11-16 18:24:19 +00:00:     at Route.dispatch (/root/Kabin247/node_modules/router/lib/route.js:117:3)
+2025-11-16 18:24:19 +00:00:     at handle (/root/Kabin247/node_modules/router/index.js:435:11)
+2025-11-16 18:24:19 +00:00:     at Layer.handleRequest (/root/Kabin247/node_modules/router/lib/layer.js:152:17)
+2025-11-16 18:24:19 +00:00:     at /root/Kabin247/node_modules/router/index.js:295:15
+2025-11-16 18:24:19 +00:00:     at processParams (/root/Kabin247/node_modules/router/index.js:582:12)
+2025-11-16 18:24:19 +00:00:     at next (/root/Kabin247/node_modules/router/index.js:291:5)
+2025-11-16 18:24:19 +00:00:     at /root/Kabin247/node_modules/express-formidable/lib/middleware.js:36:7
+2025-11-16 18:24:19 +00:00:     at IncomingForm.<anonymous> (/root/Kabin247/node_modules/formidable/lib/incoming_form.js:107:9)
+2025-11-16 18:24:19 +00:00:     at IncomingForm.emit (node:events:524:28)
+2025-11-16 18:24:19 +00:00:     at IncomingForm._maybeEnd (/root/Kabin247/node_modules/formidable/lib/incoming_form.js:563:8)
+2025-11-16 18:24:19 +00:00:     at Object.end (/root/Kabin247/node_modules/formidable/lib/incoming_form.js:251:12)
+2025-11-16 18:24:19 +00:00:     at IncomingMessage.<anonymous> (/root/Kabin247/node_modules/formidable/lib/incoming_form.js:132:30)
+2025-11-16 18:24:19 +00:00:     at IncomingMessage.emit (node:events:524:28)
+2025-11-16 18:24:19 +00:00:     at endReadableNT (node:internal/streams/readable:1698:12)
+2025-11-16 18:24:19 +00:00:     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+2025-11-16 18:31:07 +00:00: AdminJS Error: Not Found
+2025-11-16 18:59:44 +00:00: AdminJS Error: Not Found
+2025-11-16 19:11:29 +00:00: AdminJS Error: Not Found
+2025-11-16 19:18:10 +00:00: AdminJS Error: Not Found
+2025-11-16 19:49:24 +00:00: AdminJS Error: Not Found
+2025-11-16 19:52:44 +00:00: AdminJS Error: Not Found
+2025-11-17 01:26:13 +00:00: AdminJS Error: Not Found
+2025-11-17 01:42:35 +00:00: AdminJS Error: Not Found
+2025-11-17 02:32:49 +00:00: AdminJS Error: Not Found
+2025-11-17 02:55:12 +00:00: AdminJS Error: Not Found
+2025-11-24 19:22:56 +00:00: AdminJS Error: Not Found

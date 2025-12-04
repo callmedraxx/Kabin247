@@ -16,6 +16,9 @@ export default function SignUp() {
   const [phoneError, setPhoneError] = useState<string | null>(null)
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
   const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [emailFailed, setEmailFailed] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState<string>('')
+  const [isResending, setIsResending] = useState(false)
 
   const debouncedEmail = useDebounce(emailValue, 500)
   const debouncedPhone = useDebounce(phoneValue, 500)
@@ -151,11 +154,14 @@ export default function SignUp() {
           const { data } = await axios.post('/api/auth/register', values)
           if (data.success && data?.user?.id) {
             if (data.emailError) {
+              setEmailFailed(true)
+              setRegisteredEmail(values.email)
               toast.warning(t(data.message || 'Account created but verification email failed'), {
-                description: `Error: ${data.emailError.code || 'MAIL_ERROR'} - ${data.emailError.message || 'Unknown error'}`,
+                description: t('Please use the resend verification button below to receive your verification link.'),
                 duration: 10000,
               })
             } else {
+              setEmailFailed(false)
               toast.success(t(data.message || 'Account created successfully'))
             }
           }
@@ -198,6 +204,43 @@ export default function SignUp() {
                 />
               )
             })}
+
+            {emailFailed && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg space-y-3">
+                <p className="text-sm text-yellow-800">
+                  {t('Registration was successful, but we could not send the verification email. Please use the resend verification feature to receive your verification link.')}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  colorScheme="primary"
+                  size="sm"
+                  isLoading={isResending}
+                  onClick={async () => {
+                    if (!registeredEmail) return
+                    setIsResending(true)
+                    try {
+                      const { data } = await axios.post('/api/auth/resend-verification', {
+                        email: registeredEmail,
+                      })
+                      if (data.success) {
+                        toast.success(t(data.message || 'Verification email sent successfully'))
+                        setEmailFailed(false)
+                      } else {
+                        toast.error(t(data.message || 'Failed to send verification email'))
+                      }
+                    } catch (error: any) {
+                      const errorMessage = error?.response?.data?.message || 'Failed to resend verification email'
+                      toast.error(t(errorMessage))
+                    } finally {
+                      setIsResending(false)
+                    }
+                  }}
+                >
+                  {t('Resend Verification Email')}
+                </Button>
+              </div>
+            )}
 
             <div className="flex justify-end">
               <Button

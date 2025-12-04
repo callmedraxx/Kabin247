@@ -189,7 +189,7 @@ export default function MyProfile() {
                   {/* Airport Field */}
                   <div className="w-full py-4 flex flex-col gap-y-2">
                     <h3 className="text-base font-normal">{t('Delivery airport')}</h3>
-                    <FormControl isRequired>
+                    <FormControl>
                       <Box ref={dropdownRef} className="relative border rounded-2xl px-4 py-1.5 border-secondary-300">
                         <FormLabel className="m-0 text-secondary-500 text-xs leading-5 font-normal">
                           {t('Airport')}

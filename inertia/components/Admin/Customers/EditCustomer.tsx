@@ -101,19 +101,59 @@ export default function EditCustomer({
               isEmailVerified: !!isEmailVerified,
             }}
             onSubmit={async (values, actions) => {
+              if (!values) return;
+              
               try {
                 actions.setSubmitting(true);
-                const { data } = await axios.put(`/api/users/${id}`, {
-                  ...values,
-                  isSuspended: values.isSuspended ? 0 : 1,
-                });
+                const payload: any = {
+                  firstName: values?.firstName?.trim() || '',
+                  lastName: values?.lastName?.trim() || undefined,
+                  companyName: values?.companyName?.trim() || undefined,
+                  email: values?.email?.trim() || '',
+                  secondEmail: values?.secondEmail?.trim() || undefined,
+                  phoneNumber: values?.phoneNumber?.trim() || '',
+                  secondPhoneNumber: values?.secondPhoneNumber?.trim() || undefined,
+                  clientAddress: values?.clientAddress?.trim() || undefined,
+                  password: values?.password?.trim() || undefined,
+                  roleId: values?.roleId || 6,
+                  isSuspended: values?.isSuspended ? 0 : 1,
+                  isEmailVerified: values?.isEmailVerified ?? false,
+                  ...(values?.address && values.address.toString().trim() && !isNaN(Number(values.address)) 
+                    ? { address: Number(values.address) } 
+                    : {}),
+                };
+                const { data } = await axios.put(`/api/users/${id}`, payload);
                 if (data?.success) {
+                  actions.resetForm();
                   onClose();
                   refresh();
                   toast.success(t(data?.message) || 'Client updated successfully');
+                } else {
+                  toast.error(t(data?.message) || t('Failed to update client'));
                 }
-              } catch (e) {
-                toast.error(t(e.response.data.message) || t('Something went wrong'));
+              } catch (e: any) {
+                if (e?.response?.status === 422 && e?.response?.data?.messages) {
+                  const errorMessages: string[] = [];
+                  e.response.data.messages.forEach((message: { field: string; message: string }) => {
+                    const fieldName = message.field;
+                    actions.setFieldError(fieldName, t(message.message));
+                    errorMessages.push(`${t(fieldName)}: ${t(message.message)}`);
+                  });
+                  if (errorMessages.length > 0) {
+                    toast.error(t('Please fix the following errors:') + ' ' + errorMessages.join(', '));
+                  }
+                } else if (e?.response?.status === 422 && e?.response?.data?.errors) {
+                  const errors = e.response.data.errors;
+                  Object.keys(errors).forEach((field) => {
+                    const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                    actions.setFieldError(field, t(errorMsg));
+                  });
+                  toast.error(t('Please fix the validation errors'));
+                } else if (e?.response?.data?.message) {
+                  toast.error(t(e.response.data.message));
+                } else {
+                  toast.error(t('Something went wrong. Please check your input and try again.'));
+                }
               } finally {
                 actions.setSubmitting(false);
               }

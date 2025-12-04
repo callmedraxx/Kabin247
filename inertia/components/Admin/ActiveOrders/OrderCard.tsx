@@ -79,13 +79,21 @@ export default function OrderCard({
     }
   };
 
+  // Format airport display - handle same codes with different FBO names
+  const airportDisplay = deliveryAirport 
+    ? `${deliveryAirport.fboName || deliveryAirport.name || ''}${deliveryAirport.iataCode || deliveryAirport.icaoCode ? ` (${[deliveryAirport.iataCode, deliveryAirport.icaoCode].filter(Boolean).join(' / ')})` : ''}`
+    : '-';
+
+  // Get order items summary
+  const itemsSummary = orderItems?.slice(0, 2).map((item: any) => item.name).join(', ') + (orderItems?.length > 2 ? '...' : '');
+
   return (
     <Box
       className="h-64 flex flex-col justify-between bg-white shadow-primary rounded-md p-4 cursor-pointer"
       onClick={() => onClick?.(id)}
     >
       <div className="flex items-start justify-between">
-        <div>
+        <div className="flex-1">
           <Badge
             colorScheme={{ dine_in: 'cyan', delivery: 'primary', pickup: 'blue' }?.[type]}
             mb={1}
@@ -93,80 +101,93 @@ export default function OrderCard({
             {t(startCase(type))}
           </Badge>
           <p className="text-secondary-600 font-bold mb-1">#{orderNumber}</p>
+          {itemsSummary && (
+            <p className="text-secondary-500 text-xs mb-1 line-clamp-1" title={itemsSummary}>
+              {itemsSummary}
+            </p>
+          )}
         </div>
-        <div className="flex flex-col items-end">
-          <Badge colorScheme={paymentStatus === 'paid' ? 'green' : paymentStatus === 'unpaid' ? 'orange' : 'cyan'} mb={1}>
-            {paymentStatus === 'unpaid' ? t('UNPAID') : paymentStatus === 'payment_requested' ? t('PAYMENT REQUESTED') : t('PAID')}
-          </Badge>
-          <p className="text-secondary-600 font-bold mb-1">
-            {convertToCurrencyFormat(grandTotal)}
-          </p>
-          <p className="text-secondary-400 text-sm">
-            {orderItems.length} {orderItems.length > 1 ? t('Item(s)') : t('Item')}
+        <div className="flex flex-col items-end ml-2">
+          <p className="text-secondary-400 text-xs mb-1">
+            {orderItems?.length || 0} {orderItems?.length !== 1 ? t('Item(s)') : t('Item')}
           </p>
         </div>
       </div>
-      <p className="text-secondary-400 text-sm">
-        <span className='font-bold text-[#0009]'>
-          Client:{" "}
-        </span>
-        {user?.fullName || "-"}
-      </p>
 
-      <p className="text-secondary-400 text-sm">
+      {/* Delivery Information - Prioritized */}
+      {type === 'delivery' && deliveryAirport && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
+          <p className="text-blue-800 font-semibold text-sm mb-1">
+            {t('Delivery Location')}
+          </p>
+          <p className="text-blue-700 text-sm font-medium">
+            {airportDisplay}
+          </p>
+        </div>
+      )}
+
+      <p className="text-secondary-600 text-sm font-medium">
         <span className='font-bold text-[#0009]'>
-          Delivery Date:{" "}
+          {t('Delivery Date')}:{" "}
         </span>
         {format(new Date(createdAt), 'MMM dd, yyyy | hh:mm a')}
       </p>
 
-      <p className="text-secondary-400 text-sm">
+      <p className="text-secondary-500 text-sm">
         <span className='font-bold text-[#0009]'>
-          Airport Code:{" "}
+          {t('Client')}:{" "}
         </span>
-        {`${deliveryAirport?.iataCode} / ${deliveryAirport?.icaoCode}`}
+        {user?.fullName || "-"}
       </p>
 
-      <p className="text-secondary-400 text-sm">
-        <span className='font-bold text-[#0009]'>
-          FBO Name:{" "}
-        </span>
-        {`${deliveryAirport?.fboName}`}
-      </p>
-
-      <div className="flex flex-col gap-2">
-        <Menu>
-          <MenuButton
-            as={Button}
-            w="full"
-            variant="outline"
-            textAlign="left"
-            colorScheme={status?.scheme}
-            color={status?.fgColor}
-            borderColor={status?.fgColor}
-            rightIcon={<ArrowDown2 />}
-            onClick={(e) => e.stopPropagation()}
+      <div className="flex items-center justify-between mt-auto">
+        <div className="flex flex-col gap-2 flex-1">
+          <Menu>
+            <MenuButton
+              as={Button}
+              w="full"
+              variant="outline"
+              textAlign="left"
+              colorScheme={status?.scheme}
+              color={status?.fgColor}
+              borderColor={status?.fgColor}
+              rightIcon={<ArrowDown2 />}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {t(status?.label)}
+            </MenuButton>
+            <MenuList className="p-1">
+              {orderStatus.all().map(
+                (s) =>
+                  (!s.orderType || s.orderType === type) && (
+                    <MenuItem
+                      key={s.value}
+                      color={s.fgColor}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusChange(s);
+                      }}
+                    >
+                      {t(s.label)}
+                    </MenuItem>
+                  )
+              )}
+            </MenuList>
+          </Menu>
+        </div>
+        {/* Payment info moved to bottom right - secondary */}
+        <div className="flex flex-col items-end ml-2 text-right">
+          <Badge 
+            colorScheme={paymentStatus === 'paid' ? 'green' : paymentStatus === 'unpaid' ? 'orange' : 'cyan'} 
+            mb={1}
+            fontSize="xs"
           >
-            {t(status?.label)}
-          </MenuButton>
-          <MenuList className="p-1">
-            {orderStatus.all().map(
-              (s) =>
-                (!s.orderType || s.orderType === type) && (
-                  <MenuItem
-                    key={s.value}
-                    color={s.fgColor}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(s);
-                    }}
-                  >
-                    {t(s.label)}
-                  </MenuItem>
-                )
-            )}
-          </MenuList>
-        </Menu>
+            {paymentStatus === 'unpaid' ? t('UNPAID') : paymentStatus === 'payment_requested' ? t('PAYMENT REQUESTED') : t('PAID')}
+          </Badge>
+          <p className="text-secondary-500 text-sm font-medium">
+            {convertToCurrencyFormat(grandTotal)}
+          </p>
+        </div>
       </div>
     </Box>
   );

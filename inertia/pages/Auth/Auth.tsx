@@ -1,5 +1,5 @@
 import { Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import Login from '@/components/Auth/Login';
 import SignUp from '@/components/Auth/SignUp';
 import CustomerLayout from '@/components/Customer/CustomerLayout';
@@ -8,13 +8,14 @@ import { useEffect } from 'react';
 
 export default function Auth({ ...props }) {
   const { t } = useTranslation();
-  const path = window.location.pathname.split('/')[1];
+  const { url } = usePage();
+  const path = url.split('/')[1] || 'login';
 
   useEffect(() => {
     if (props.auth) {
-      window.location.href = '/';
+      router.visit('/');
     }
-  }, []);
+  }, [props.auth]);
 
   if (props.auth) {
     return (

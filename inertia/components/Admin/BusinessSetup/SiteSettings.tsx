@@ -303,7 +303,7 @@ export default function SiteSettings({ isLoading, businessInfo, refresh }: Props
                         name="contactUsImage"
                         type="file"
                         label="Image"
-                        defaultPreview={businessInfo.contactUsImage?.url}
+                        defaultPreview={businessInfo?.contactUsImage?.url}
                       />
                     </div>
                   </div>

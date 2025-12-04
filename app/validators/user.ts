@@ -26,7 +26,34 @@ export const userValidator = vine.compile(
       .optional(),
     phoneNumber: vine.string().trim(),
     secondPhoneNumber: vine.string().trim().optional(),
-    address: vine.number(),
+    address: vine.number().optional(),
+    clientAddress: vine.string().trim().optional(),
+    isEmailVerified: vine.boolean().optional(),
+    isSuspended: vine.boolean().optional(),
+  })
+);
+
+// Validator for admin-created users (doesn't enforce email uniqueness)
+// This allows admins to create users with existing emails, or we can check and return existing user
+export const adminUserValidator = vine.compile(
+  vine.object({
+    roleId: vine.number().in([1, 2, 3, 4, 5, 6, 7]),
+    firstName: vine.string().trim(),
+    lastName: vine.string().trim().optional(),
+    companyName: vine.string().trim().optional(),
+    email: vine.string().trim().email(), // No .unique() check for admin-created users
+    secondEmail: vine.string().trim().email().nullable().optional(),
+    password: vine
+      .string()
+      .trim()
+      .minLength(8)
+      .confirmed({
+        confirmationField: 'confirmPassword',
+      })
+      .optional(),
+    phoneNumber: vine.string().trim(),
+    secondPhoneNumber: vine.string().trim().optional(),
+    address: vine.number().optional(),
     clientAddress: vine.string().trim().optional(),
     isEmailVerified: vine.boolean().optional(),
     isSuspended: vine.boolean().optional(),
@@ -52,7 +79,7 @@ export const userUpdateValidator = vine.compile(
       .optional(),
     phoneNumber: vine.string().trim(),
     secondPhoneNumber: vine.string().trim().optional(),
-    address: vine.number(),
+    address: vine.number().optional(),
     clientAddress: vine.string().trim().optional(),
     isEmailVerified: vine.boolean().optional(),
     isSuspended: vine.boolean().optional(),

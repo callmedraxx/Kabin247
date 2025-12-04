@@ -3,6 +3,7 @@ import type { HttpContext } from '@adonisjs/core/http';
 import Roles from '../enum/roles.js';
 import string from '@adonisjs/core/helpers/string';
 import {
+  adminUserValidator,
   bulkCustomValidator,
   bulkDeleteValidator,
   customUpdateValidator,
@@ -231,9 +232,26 @@ export default class UsersController {
    *       400:
    *         description: Bad request
    */
-  async store({ logger, request, response }: HttpContext) {
+  async store({ logger, request, response, auth }: HttpContext) {
     try {
-      const payload = await request.validateUsing(userValidator);
+      // For admin-created customers/delivery persons, always create a new user
+      // even if email exists - this keeps admin-created clients separate from self-signed-up clients
+      const isAdmin = auth.user && ![Roles.CUSTOMER].includes(auth.user.roleId);
+      const isCreatingCustomerOrDelivery = [Roles.DELIVERY, Roles.CUSTOMER].includes(
+        request.input('roleId')
+      );
+
+      // Use a validator without email uniqueness for admin-created users
+      // This allows admins to create clients with duplicate emails (separate from self-signed-up users)
+      let payload;
+      if (isAdmin && isCreatingCustomerOrDelivery) {
+        // Use admin validator without unique email check - always create new user
+        payload = await request.validateUsing(adminUserValidator);
+      } else {
+        // Use regular validator with email uniqueness for signup
+        payload = await request.validateUsing(userValidator);
+      }
+
       if (![Roles.DELIVERY, Roles.CUSTOMER].includes(payload.roleId) && !payload.password?.trim()) {
         return response.badRequest({ success: false, message: 'password is a required field' });
       }
@@ -243,20 +261,24 @@ export default class UsersController {
           ...payload,
           password,
         });
-        const branding = await useBranding();
-        await mail.send(
-          new UserCreateNotification(user, password, {
-            business: branding.business,
-            siteUrl: branding.siteUrl || '',
-          })
-        );
+        // Disabled: Client login/password emails will be rolled out at a later time
+        // Only staff (non-CUSTOMER, non-DELIVERY) should receive password emails
+        // Do not send password emails to clients or delivery persons
         return response.created({
           success: true,
           message: 'User created successfully',
           content: user,
         });
       }
+      // For staff users (non-CUSTOMER, non-DELIVERY), send password email
       const user = await User.create(payload);
+      const branding = await useBranding();
+      await mail.send(
+        new UserCreateNotification(user, payload.password || '', {
+          business: branding.business,
+          siteUrl: branding.siteUrl || '',
+        })
+      );
       return response.created({
         success: true,
         message: 'User created successfully',

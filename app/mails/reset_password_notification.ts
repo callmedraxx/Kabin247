@@ -12,12 +12,12 @@ export default class ResetPasswordNotification extends BaseMail {
   url: string;
   appName: string;
 
-  constructor(user: User, token: string, branding: { business: BusinessSetup; siteUrl: string }) {
+  constructor(user: User, token: string, branding: { business: BusinessSetup | null; siteUrl: string }) {
     super();
     this.user = user;
     this.token = token;
     this.url = branding.siteUrl;
-    this.appName = branding.business.name || '';
+    this.appName = branding.business?.name || '';
     this.logo = branding.siteUrl + branding?.business?.logo?.url || '';
   }
 

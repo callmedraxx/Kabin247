@@ -10,6 +10,7 @@ import {
   Input,
   Spinner,
   Text,
+  Textarea,
 } from '@chakra-ui/react';
 import { Field, Form, Formik } from 'formik';
 import { Minus, Location, SearchNormal } from 'iconsax-react';
@@ -44,7 +45,11 @@ export default function CustomerInsertForm({
     setIsLoading(true);
     axios
       .get(`/api/airports?q=${debouncedSearch}`)
-      .then((res) => setOptions(res.data || []))
+      .then((res) => {
+        // Handle different response formats
+        const airports = res.data?.results || res.data?.data || res.data || [];
+        setOptions(Array.isArray(airports) ? airports : []);
+      })
       .catch(() => toast.error(t('Failed to load airports')))
       .finally(() => setIsLoading(false));
   }, [debouncedSearch, editingAirport]);
@@ -68,12 +73,13 @@ export default function CustomerInsertForm({
         email: '',
         phoneNumber: '',
         address: '', // airportId
+        clientAddress: '',
       }}
       validationSchema={NewCustomerSchema}
       onSubmit={async (values, actions) => {
         actions.setSubmitting(true);
 
-        const { firstName, lastName, email, phoneNumber, address } = values;
+        const { firstName, lastName, email, phoneNumber, address, clientAddress } = values;
         const formData = {
           firstName,
           lastName,
@@ -81,6 +87,7 @@ export default function CustomerInsertForm({
           phoneNumber,
           roleId: 6,
           address, // this is airportId
+          clientAddress: clientAddress || undefined,
         };
 
         try {
@@ -219,6 +226,23 @@ export default function CustomerInsertForm({
                 </>
               )}
             </Box>
+          </FormControl>
+
+          {/* Full Address Details */}
+          <FormControl>
+            <Field name="clientAddress">
+              {({ field, meta }: any) => (
+                <FormControl isInvalid={meta.errors && meta.touched}>
+                  <Textarea
+                    {...field}
+                    placeholder={t('Full address details (street, city, state, zip code, etc.)')}
+                    rows={3}
+                    resize="vertical"
+                  />
+                  <FormErrorMessage>{t(meta.errors)}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field>
           </FormControl>
 
           <Button

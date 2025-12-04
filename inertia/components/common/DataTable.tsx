@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   TableContainer,
   Table as TableChakra,
@@ -35,6 +35,7 @@ type Props = {
   sorting: SortingState;
   setSorting: OnChangeFn<SortingState>;
   onRowSelection?: (data: any) => void;
+  onRowClick?: (row: any) => void;
   getRowId?: (row: any) => any;
   pagination?: {
     total: number;
@@ -45,6 +46,7 @@ type Props = {
   };
   padding?: boolean;
   enableMultiRowSelection?: boolean;
+  renderRowWrapper?: (row: any, children: React.ReactNode) => React.ReactNode;
 };
 
 export default function DataTable({
@@ -54,14 +56,18 @@ export default function DataTable({
   sorting,
   pagination = undefined,
   onRowSelection,
+  onRowClick,
   setSorting,
   getRowId,
   enableMultiRowSelection = false,
   padding = true,
+  renderRowWrapper,
 }: Props) {
   const { t } = useTranslation();
   const columns = useMemo<ColumnDef<any>[]>(() => structure, [structure]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const rafRef = useRef<number | null>(null);
+  const tableRef = useRef<any>(null);
 
   const table = useReactTable({
     data: data || [],
@@ -79,16 +85,37 @@ export default function DataTable({
     debugTable: false,
   });
 
+  // Store table reference for use in effect
+  tableRef.current = table;
+
   const selectedRows = useMemo(() => rowSelection, [rowSelection]);
 
+  // Optimize selection callback with requestAnimationFrame to prevent UI blocking
   useEffect(() => {
-    if (Object.keys(selectedRows).length) {
-      const selectedRowsData = table.getSelectedRowModel().flatRows.map((row) => row.original);
-      onRowSelection?.(selectedRowsData);
-    } else {
-      onRowSelection?.([]);
+    // Cancel any pending animation frame
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
     }
-  }, [selectedRows]);
+
+    // Schedule callback on next frame to keep UI responsive
+    rafRef.current = requestAnimationFrame(() => {
+      if (tableRef.current) {
+        if (Object.keys(selectedRows).length) {
+          const selectedRowsData = tableRef.current.getSelectedRowModel().flatRows.map((row: any) => row.original);
+          onRowSelection?.(selectedRowsData);
+        } else {
+          onRowSelection?.([]);
+        }
+      }
+      rafRef.current = null;
+    });
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [selectedRows, onRowSelection]);
 
   if (isLoading) {
     return (
@@ -127,7 +154,8 @@ export default function DataTable({
                 <Th
                   key={header.id}
                   fontSize={12}
-                  py={0}
+                  py={0.5}
+                  px={0.5}
                   className={(header?.column?.columnDef?.meta as { className?: string })?.className}
                 >
                   {header.isPlaceholder ? null : (
@@ -135,7 +163,7 @@ export default function DataTable({
                       colorScheme="transparent"
                       {...{
                         className:
-                          'font-inter text-secondary-600 text-xs font-bold uppercase h-9 px-0 w-full flex justify-between items-center cursor-pointer py-1',
+                          'font-inter text-secondary-600 text-xs font-bold uppercase h-9 px-1 w-full flex justify-between items-center cursor-pointer py-1',
                         onClick: header.column.getToggleSortingHandler(),
                       }}
                     >
@@ -161,21 +189,48 @@ export default function DataTable({
           ))}
         </Thead>
         <Tbody>
-          {table.getRowModel().rows.map((row, index) => (
-            <Tr key={row.id} className={index % 2 === 1 ? 'bg-white' : 'bg-secondary-50'}>
-              {row.getVisibleCells().map((cell) => {
-                return (
-                  <Td
-                    key={cell.id}
-                    // @ts-ignore
-                    className={`${cell.column.columnDef.meta?.cellClassName || ''} text-secondary-600 font-medium text-sm`}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Td>
-                );
-              })}
-            </Tr>
-          ))}
+          {table.getRowModel().rows.map((row, index) => {
+            const rowContent = (
+              <Tr 
+                key={row.id} 
+                className={`${index % 2 === 1 ? 'bg-white' : 'bg-secondary-50'} ${onRowClick ? 'cursor-pointer hover:bg-secondary-100' : ''}`}
+                onClick={(e) => {
+                  // Don't trigger row click if clicking on interactive elements
+                  const target = e.target as HTMLElement;
+                  if (
+                    target.closest('button') ||
+                    target.closest('input') ||
+                    target.closest('select') ||
+                    target.closest('[role="menu"]') ||
+                    target.closest('[role="menuitem"]') ||
+                    target.closest('a')
+                  ) {
+                    return;
+                  }
+                  onRowClick?.(row.original);
+                }}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  return (
+                    <Td
+                      key={cell.id}
+                      py={0.5}
+                      px={0.5}
+                      // @ts-ignore
+                      className={`${cell.column.columnDef.meta?.cellClassName || ''} text-secondary-600 font-medium text-sm`}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  );
+                })}
+              </Tr>
+            );
+
+            if (renderRowWrapper) {
+              return renderRowWrapper(row.original, rowContent);
+            }
+            return rowContent;
+          })}
         </Tbody>
       </TableChakra>
       {pagination && pagination.total > 5 && (

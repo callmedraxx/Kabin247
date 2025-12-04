@@ -1,7 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http';
 import swaggerJsdoc from 'swagger-jsdoc';
+import type { Options as SwaggerOptions } from 'swagger-jsdoc';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import env from '#start/env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,8 +11,21 @@ const __dirname = dirname(__filename);
 // Get project root (go up from app/controllers to project root)
 const projectRoot = join(__dirname, '../..');
 
+// Get server URL from environment or construct from HOST/PORT
+const getServerUrl = () => {
+  const serverUrl = env.get('SERVER_URL');
+  if (serverUrl) {
+    return serverUrl;
+  }
+  const host = env.get('HOST');
+  const port = env.get('PORT');
+  const protocol = env.get('NODE_ENV') === 'production' ? 'https' : 'http';
+  const portSuffix = (port === 80 || port === 443) ? '' : `:${port}`;
+  return `${protocol}://${host}${portSuffix}`;
+};
+
 // Swagger configuration
-const swaggerOptions: swaggerJsdoc.Options = {
+const swaggerOptions: SwaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
@@ -23,12 +38,8 @@ const swaggerOptions: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:3333',
-        description: 'Development server',
-      },
-      {
-        url: 'https://api.example.com',
-        description: 'Production server',
+        url: getServerUrl(),
+        description: env.get('NODE_ENV') === 'production' ? 'Production server' : 'Development server',
       },
     ],
     components: {

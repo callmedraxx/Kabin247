@@ -86,19 +86,23 @@ export default function NewMenuItem({ refresh }: { refresh?: () => void }) {
 
   // handle form submit
   const handleOnSubmit = async (values: any, actions: any) => {
+    if (!values) return;
+    
     try {
       actions.setSubmitting(true);
 
       const formData = new FormData();
 
       for (const key in values) {
-        if (Array.isArray(values[key])) {
-          if (values[key].length == 0) {
-            formData.append(`${key}[]`, '');
+        if (values[key] !== undefined && values[key] !== null) {
+          if (Array.isArray(values[key])) {
+            if (values[key].length == 0) {
+              formData.append(`${key}[]`, '');
+            }
+            values[key].forEach((item) => formData.append(`${key}[]`, item ?? ''));
+          } else {
+            formData.append(key, values[key]);
           }
-          values[key].forEach((item) => formData.append(`${key}[]`, item ?? ''));
-        } else {
-          formData.append(key, values[key]);
         }
       }
 
@@ -113,9 +117,32 @@ export default function NewMenuItem({ refresh }: { refresh?: () => void }) {
         actions.resetForm();
         setActiveTab('information');
         setSteps(initSteps);
+      } else {
+        toast.error(t(data?.message) || t('Failed to create menu item'));
       }
-    } catch (e) {
-      toast.error(t(e.response.data.message) || t('Something went wrong'));
+    } catch (e: any) {
+      if (e?.response?.status === 422 && e?.response?.data?.messages) {
+        const errorMessages: string[] = [];
+        e.response.data.messages.forEach((message: { field: string; message: string }) => {
+          const fieldName = message.field;
+          actions.setFieldError(fieldName, t(message.message));
+          errorMessages.push(`${t(fieldName)}: ${t(message.message)}`);
+        });
+        if (errorMessages.length > 0) {
+          toast.error(t('Please fix the following errors:') + ' ' + errorMessages.join(', '));
+        }
+      } else if (e?.response?.status === 422 && e?.response?.data?.errors) {
+        const errors = e.response.data.errors;
+        Object.keys(errors).forEach((field) => {
+          const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+          actions.setFieldError(field, t(errorMsg));
+        });
+        toast.error(t('Please fix the validation errors'));
+      } else if (e?.response?.data?.message) {
+        toast.error(t(e.response.data.message));
+      } else {
+        toast.error(t('Something went wrong. Please check your input and try again.'));
+      }
     } finally {
       actions.setSubmitting(false);
     }

@@ -49,7 +49,7 @@ const RadioButton = (props: any) => {
 
 // render payment type selection button group
 export default function PaymentTypeRadioGroup({
-  defaultValue = 'stripe',
+  defaultValue = 'card',
   onChange,
 }: {
   defaultValue: string;
@@ -57,13 +57,13 @@ export default function PaymentTypeRadioGroup({
 }) {
   const { t } = useTranslation();
   const options = [
-    { label: 'Card', value: 'stripe' },
-    { label: 'Cash', value: 'cash' },
+    { label: 'Card', value: 'card' },
+    { label: 'ACH', value: 'ach' },
   ];
 
   const { getRootProps, getRadioProps, setValue } = useRadioGroup({
     name: 'paymentType',
-    defaultValue: defaultValue || 'stripe',
+    defaultValue: defaultValue || 'card',
     onChange,
   });
 

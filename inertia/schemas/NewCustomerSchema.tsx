@@ -9,8 +9,8 @@ const NewCustomerSchema = Yup.object().shape({
   secondEmail: Yup.string().email('Invalid email format').nullable().optional(),
   phoneNumber: Yup.string().required('Phone number is required'),
   secondPhoneNumber: Yup.string().nullable(),
-  address: Yup.string().required('Airport is required'),
-  clientAddress: Yup.string().nullable(),
+  address: Yup.string().nullable().optional(),
+  clientAddress: Yup.string().nullable().optional(),
 });
 
 export default NewCustomerSchema;

@@ -54,17 +54,14 @@ export default function SideNav({ isExpanded }: { isExpanded: boolean }) {
                 <Button
                   key={item.id}
                   w="full"
-                  asChild
+                  as={Link}
+                  href={formatRoleUrl(item.href || '', roleName)}
+                  data-menu-active={item.isActive(active)}
                   className={`${item.className}  ${isExpanded ? 'justify-between' : 'justify-center'} flex items-center transition-all duration-500 gap-2`}
                 >
-                  <Link
-                    href={formatRoleUrl(item.href || '', roleName)}
-                    data-menu-active={item.isActive(active)}
-                  >
-                    {React.createElement(item.leftIcon, { size: 20, color: 'currentColor' })}
-                    {isExpanded && <span className="inline-block flex-1">{t(item.title)}</span>}
-                    {isExpanded && item.rightIcon && React.createElement(item.rightIcon, { size: 20, color: 'currentColor' })}
-                  </Link>
+                  {React.createElement(item.leftIcon, { size: 20, color: 'currentColor' })}
+                  {isExpanded && <span className="inline-block flex-1">{t(item.title)}</span>}
+                  {isExpanded && item.rightIcon && React.createElement(item.rightIcon, { size: 20, color: 'currentColor' })}
                 </Button>
               ))}
             </div>

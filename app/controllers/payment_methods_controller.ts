@@ -3,6 +3,7 @@ import BusinessSetup from '#models/business_setup';
 import PaymentMethod from '#models/payment_method';
 import { customUpdateValidator, paymentMethodValidator } from '#validators/payment_method';
 import type { HttpContext } from '@adonisjs/core/http';
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 import { attachmentManager } from '@jrmc/adonis-attachment';
 
 export default class PaymentMethodsController {
@@ -21,16 +22,16 @@ export default class PaymentMethodsController {
       const { country, currencyCode } = businessSetup;
       const data = await PaymentMethod.filter(input)
         .where('status', true)
-        .if(country, (query) =>
+        .if(country, (query: ModelQueryBuilderContract<typeof PaymentMethod>) =>
           query.whereRaw('JSON_CONTAINS(countries, ?)', [JSON.stringify(country?.toUpperCase())])
         )
-        .if(currencyCode, (query) =>
+        .if(currencyCode, (query: ModelQueryBuilderContract<typeof PaymentMethod>) =>
           query.whereRaw('JSON_CONTAINS(currencies, ?)', [
             JSON.stringify(currencyCode.toUpperCase()),
           ])
         )
         .orderBy('createdAt', 'desc');
-      const content = data.map((ele) =>
+      const content = data.map((ele: PaymentMethod) =>
         ele.serialize({
           fields: {
             pick: ['id', 'name', 'key', 'status', 'logo'],
@@ -50,10 +51,10 @@ export default class PaymentMethodsController {
       const { country, currencyCode } = businessSetup;
       const data = await PaymentMethod.query()
         .where('id', id)
-        .if(country, (query) =>
+        .if(country, (query: ModelQueryBuilderContract<typeof PaymentMethod>) =>
           query.whereRaw('JSON_CONTAINS(countries, ?)', [JSON.stringify(country?.toUpperCase())])
         )
-        .if(currencyCode, (query) =>
+        .if(currencyCode, (query: ModelQueryBuilderContract<typeof PaymentMethod>) =>
           query.whereRaw('JSON_CONTAINS(currencies, ?)', [
             JSON.stringify(currencyCode.toUpperCase()),
           ])

@@ -36,18 +36,19 @@ import {
   Select,
   Stack,
   SimpleGrid,
+  Tooltip,
 } from '@chakra-ui/react';
 import axios from 'axios';
-import { Add, ArrowRight, SearchNormal, Edit2, Location, Minus } from 'iconsax-react';
-import { useState, useEffect, useRef } from 'react';
+import { Add, ArrowRight, SearchNormal, Edit2, Location, Minus, CloseCircle } from 'iconsax-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import useSWR, { useSWRConfig } from 'swr';
 import { match, P } from 'ts-pattern';
+import { Formik } from 'formik';
 import CustomerInsertForm from './CustomerInsertForm';
 import CustomerUpdateForm from './CustomerUpdateForm';
 import PaymentTypeRadioGroup from './PaymentTypeSelect';
-import DiscountTypeRadioGroup from './DiscountTypeSelect';
 import usePOS, { POSState } from '@/data/use_pos';
 import { Charge, Customer, POSItem } from '@/types/pos_type';
 import { POSItemModal } from './POSItemModal';
@@ -97,6 +98,8 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
     iataCode: '',
     icaoCode: '',
   });
+  const [specialtyItemShoppingFee, setSpecialtyItemShoppingFee] = useState<number>(0);
+  const [serviceCharge, setServiceCharge] = useState<number>(0);
   const [addAirportErrors, setAddAirportErrors] = useState<{ [key: string]: string }>({});
   const [isSubmittingAirport, setIsSubmittingAirport] = useState(false);
 
@@ -132,6 +135,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
   const catererListRef = useRef<HTMLDivElement>(null);
 
   const [isAddingCaterer, setIsAddingCaterer] = useState(false);
+  const [isCatererUpdateFormOpen, setIsCatererUpdateFormOpen] = useState(false);
   const [newCaterer, setNewCaterer] = useState({
     name: '',
     email: '',
@@ -188,11 +192,6 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
     return () => listEl.removeEventListener('scroll', handleScroll);
   }, [hasMoreCatererAirports, isCatererAirportLoading]);
 
-  const [discount, setDiscount] = useState<{
-    show: boolean;
-    value: number;
-    type: 'amount' | 'percentage';
-  }>({ show: false, value: 0, type: 'amount' });
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
   const [isOrderProcessing, setIsOrderProcessing] = useState(false);
 
@@ -241,6 +240,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
     setSelectedAirport(airport);
     setAirportSearch('');
     setAirportEditing(false);
+    resetError('deliveryAirport');
   };
 
   const updateCatererAirport = async (catererAirport: any) => {
@@ -295,6 +295,8 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
     setSelectedCaterer(caterer);
     setCatererSearch('');
     setCatererEditing(false);
+    resetError('caterer');
+    pos.setDeliveryCaterer(caterer);
   };
 
   useEffect(() => {
@@ -303,15 +305,74 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
     const fetchCaterers = async () => {
       setIsCatererLoading(true);
       try {
-        const res = await axios.get('/api/users', {
-          params: {
-            type: 'delivery',
-            search: debouncedCatererSearch,
-            page: catererPage,
-            limit: 20,
-          },
-        });
-        const results = res.data.data || [];
+        // Search by name, email, or airport code
+        const searchTerm = debouncedCatererSearch.trim();
+        let results = [];
+        
+        if (searchTerm.length >= 2) {
+          // Check if search looks like airport code (2-4 letters/numbers, typically uppercase)
+          const isAirportCode = /^[A-Z0-9]{2,4}$/i.test(searchTerm);
+          
+          if (isAirportCode) {
+            // Search airports first by code
+            const airportRes = await axios.get('/api/airports', {
+              params: {
+                q: searchTerm,
+                page: 1,
+                limit: 10,
+              },
+            });
+            const airports = airportRes.data?.results || airportRes.data?.data || airportRes.data || [];
+            
+            if (airports.length > 0) {
+              // Get all caterers and filter by airport
+              const catererRes = await axios.get('/api/users', {
+                params: {
+                  type: 'delivery',
+                  page: 1,
+                  limit: 100, // Get more to filter
+                },
+              });
+              const allCaterers = catererRes.data.data || [];
+              
+              // Filter caterers by matching airport IDs
+              for (const airport of airports) {
+                const airportCaterers = allCaterers.filter((c: any) => 
+                  c.airport?.id === airport.id || 
+                  c.address === airport.id ||
+                  c.airport?.iataCode?.toUpperCase() === searchTerm.toUpperCase() ||
+                  c.airport?.icaoCode?.toUpperCase() === searchTerm.toUpperCase()
+                );
+                results = [...results, ...airportCaterers];
+              }
+              
+              // Remove duplicates
+              results = results.filter((v: any, i: number, a: any[]) => 
+                a.findIndex((t: any) => t.id === v.id) === i
+              );
+            }
+          }
+          
+          // Also search by name/email (always do this, or if airport code search had no results)
+          if (!isAirportCode || results.length === 0) {
+            const nameRes = await axios.get('/api/users', {
+              params: {
+                type: 'delivery',
+                search: searchTerm,
+                page: catererPage,
+                limit: 20,
+              },
+            });
+            const nameResults = nameRes.data.data || [];
+            
+            // Merge results, avoiding duplicates
+            nameResults.forEach((caterer: any) => {
+              if (!results.find((r: any) => r.id === caterer.id)) {
+                results.push(caterer);
+              }
+            });
+          }
+        }
 
         setCatererOptions((prev) =>
           catererPage === 1 ? results : [...prev, ...results]
@@ -332,50 +393,179 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
     errors.delete(key);
     setErrors(errors);
   };
-  // add discount
-  const addDiscount = (payload: typeof discount) => {
-    pos.setDiscount(payload.value, payload.type);
-    setDiscount({
-      ...payload,
-      show: false,
-    });
-  };
 
   const resetPOSState = () => {
+    // Reset POS state (items, charges, totals, notes, etc.)
     pos.resetPOS();
+    
+    // Reset customer selection
+    setCustomerSearchText('');
+    setIsCustomerInsertForm(false);
+    setIsCustomerUpdateFormOpen(false);
+    setCustomerPopoverOpen.off();
+    
+    // Reset airport selection
     setSelectedAirport(null);
+    setAirportSearch('');
+    setAirportEditing(false);
+    setAirportOptions([]);
+    setAirportPage(1);
+    setHasMoreAirports(true);
+    setIsAddingAirport(false);
+    setNewAirport({
+      name: '',
+      fboName: '',
+      fboEmail: '',
+      fboPhone: '',
+      iataCode: '',
+      icaoCode: '',
+    });
+    
+    // Reset fee fields
+    setSpecialtyItemShoppingFee(0);
+    setServiceCharge(0);
+    setAddAirportErrors({});
+    
+    // Reset caterer selection
+    setSelectedCaterer(null);
+    setCatererEditing(false);
+    setCatererSearch('');
+    setCatererOptions([]);
+    setCatererPage(1);
+    setHasMoreCaterers(true);
+    setIsAddingCaterer(false);
+    setIsCatererUpdateFormOpen(false);
+    setNewCaterer({
+      name: '',
+      email: '',
+      phoneNumber: '',
+      airportId: ''
+    });
+    setAddCatererErrors({});
+    setSelectedCatererAirport(null);
+    setCatererAirportSearch('');
+    setCatererAirportEditing(false);
+    setCatererAirportOptions([]);
+    setCatererAirportPage(1);
+    setHasMoreCatererAirports(true);
+    
+    // Reset errors
+    setErrors(new Map());
+    
+    // Reset item modal
+    setIsModalOpen(false);
+    setEditingItem(null);
   };
+
+  // Validate required fields
+  const validateOrder = (state: POSState): { isValid: boolean; errors: Map<string, string> } => {
+    const validationErrors = new Map<string, string>();
+
+    if (!state?.customer?.id) {
+      validationErrors.set('customer', t('Client is required'));
+    }
+
+    if (!selectedCaterer?.id) {
+      validationErrors.set('caterer', t('Caterer / Delivery Person is required'));
+    }
+
+    if (!state?.paymentType || (state.paymentType !== 'card' && state.paymentType !== 'ach')) {
+      validationErrors.set('paymentType', t('Payment method is required'));
+    }
+
+    // Check for valid items (with name, quantity > 0, price >= 0)
+    const validItems = state.POSItems?.filter((item: POSItem) => {
+      return item.name && 
+             item.name.trim() !== '' && 
+             item.quantity > 0 && 
+             item.price >= 0;
+    }) || [];
+
+    if (validItems.length === 0) {
+      validationErrors.set('items', t('At least one valid item is required'));
+    }
+
+    if (!state.deliveryDate || state.deliveryDate.trim() === '') {
+      validationErrors.set('deliveryDate', t('Delivery date is required'));
+    }
+
+    if (!state.deliveryTime || state.deliveryTime.trim() === '') {
+      validationErrors.set('deliveryTime', t('Delivery time is required'));
+    }
+
+    if (!selectedAirport?.id) {
+      validationErrors.set('deliveryAirport', t('Delivery airport is required'));
+    }
+
+    return {
+      isValid: validationErrors.size === 0,
+      errors: validationErrors,
+    };
+  };
+
+  // Memoize validation result to avoid recalculating on every render
+  const validationResult = useMemo(() => validateOrder(pos), [
+    pos.customer?.id,
+    pos.paymentType,
+    pos.POSItems?.length,
+    pos.deliveryDate,
+    pos.deliveryTime,
+    selectedCaterer?.id,
+    selectedAirport?.id,
+    pos.POSItems,
+  ]);
+  const isFormValid = validationResult.isValid;
 
   // handle on place order logic
   const onPlaceOrder = async (state: POSState) => {
-    const errors = new Map<string, string>();
     setIsOrderProcessing(true);
 
-    // Return errors if any validation failed
-    if (errors.size > 0) {
-      setErrors(errors);
+    // Validate required fields
+    const validation = validateOrder(state);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
       setIsOrderProcessing(false);
+      // Show toast with first error
+      const firstError = Array.from(validation.errors.values())[0];
+      toast.error(firstError);
       return;
     }
+
+    // Filter out invalid items (items without name or with zero quantity/price)
+    const validItems = state.POSItems.filter((item: POSItem) => {
+      return item.name && 
+             item.name.trim() !== '' && 
+             item.quantity > 0 && 
+             item.price >= 0;
+    });
+
+    if (validItems.length === 0) {
+      setErrors(new Map([['items', t('At least one valid item is required')]]));
+      setIsOrderProcessing(false);
+      toast.error(t('At least one valid item is required'));
+      return;
+    }
+
     // Format the data for submission
     const formattedData = {
       userId: state?.customer?.id,
       type: "delivery",
-      manualDiscount: state?.discount,
       paymentType: state?.paymentType,
-      customerNote: state?.note,
+      customerNote: state?.note || '',
       paymentStatus: 'payment_requested',
       note: state.note || '',
       packagingNote: state.packagingNote || '',
       reheatMethod: state.reheatMethod || '',
       tailNumber: state.tailNumber || '',
-      deliveryDate: state.deliveryDate || '',
-      deliveryTime: state.deliveryTime || '',
+      deliveryDate: state.deliveryDate,
+      deliveryTime: state.deliveryTime,
       dietaryRes: state.dietaryRes || '',
       priority: state.priority || '',
       deliveryAirportId: selectedAirport?.id,
       deliveryManId: selectedCaterer?.id,
-      orderItems: state.POSItems,
+      specialtyItemShoppingFee: specialtyItemShoppingFee || 0,
+      serviceCharge: serviceCharge || 0,
+      orderItems: validItems, // Only send valid items
     };
 
     try {
@@ -424,15 +614,22 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
 
   const content = (
     <>
-      <div className="@[900px]:sticky top-0 right-0 w-full inset-y-0 flex flex-col @[900px]:min-w-[512px] h-[calc(100vh-65px)]  md:h-[calc(100vh-76px)] bg-white border-l border-black/10 overflow-hidden">
+      <div className="@[900px]:sticky top-0 right-0 w-full inset-y-0 flex flex-col @[900px]:min-w-[512px] h-[calc(100vh-65px)]  md:h-[calc(100vh-76px)] bg-white border-l border-black/10">
         <Flex
           flexDir="column"
           rowGap="2"
           flexGrow={1}
+          flexShrink={1}
+          minH={0}
           px={4}
           py={6}
           overflowY="auto"
           overflowX="hidden"
+          style={{ 
+            overscrollBehavior: 'contain', 
+            WebkitOverflowScrolling: 'touch',
+            scrollBehavior: 'smooth'
+          }}
         >
           <div className='flex flex-col bg-[#f6f9fc] p-4 rounded-lg'>
             <Stack spacing={{ base: 3, md: 4 }}>
@@ -448,6 +645,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                       onSubmit={(data) => {
                         if (data?.content) {
                           pos.setCustomer(data.content);
+                          resetError('customer');
                         }
                         setIsCustomerInsertForm(false);
                       }}
@@ -459,6 +657,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                       onSubmit={(data) => {
                         if (data?.content) {
                           pos.setCustomer(data.content);
+                          resetError('customer');
                         }
                         setIsCustomerUpdateForm(false);
                       }}
@@ -483,26 +682,60 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                             border="none"
                           />
                           {pos?.customer?.id ? (
+                            <>
+                              <Tooltip label={t('Edit Client')} placement="top">
+                                <IconButton
+                                  aria-label="Edit Client"
+                                  roundedLeft="0"
+                                  roundedRight="0"
+                                  border="1px"
+                                  borderColor="secondary.200"
+                                  onClick={() => setIsCustomerUpdateForm(true)}
+                                  colorScheme="blue"
+                                  variant="solid"
+                                  bg="blue.500"
+                                  _hover={{ bg: "blue.600" }}
+                                >
+                                  <Edit2 size={18} color="white" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip label={t('Clear Client')} placement="top">
+                                <IconButton
+                                  aria-label="Clear Client"
+                                  roundedLeft="0"
+                                  roundedRight="0"
+                                  border="1px"
+                                  borderColor="secondary.200"
+                                  onClick={() => {
+                                    pos.setCustomer(null);
+                                    setCustomerPopoverOpen.off();
+                                    resetError('customer');
+                                  }}
+                                  colorScheme="red"
+                                  variant="solid"
+                                  bg="red.500"
+                                  _hover={{ bg: "red.600" }}
+                                >
+                                  <CloseCircle size={18} color="white" />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          ) : null}
+                          <Tooltip label={t('Create New Client')} placement="top">
                             <IconButton
-                              aria-label="Edit Client"
+                              aria-label="Add New Client"
                               roundedLeft="0"
-                              roundedRight="0"
                               border="1px"
                               borderColor="secondary.200"
-                              onClick={() => setIsCustomerUpdateForm(true)}
+                              onClick={() => setIsCustomerInsertForm(true)}
+                              colorScheme="green"
+                              variant="solid"
+                              bg="green.500"
+                              _hover={{ bg: "green.600" }}
                             >
-                              <Edit2 />
+                              <Add size={18} color="white" />
                             </IconButton>
-                          ) : null}
-                          <IconButton
-                            aria-label="Add New Client"
-                            roundedLeft="0"
-                            border="1px"
-                            borderColor="secondary.200"
-                            onClick={() => setIsCustomerInsertForm(true)}
-                          >
-                            <Add />
-                          </IconButton>
+                          </Tooltip>
                         </HStack>
                       </PopoverAnchor>
 
@@ -545,6 +778,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                                     onClick={() => {
                                       pos.setCustomer(user);
                                       setCustomerPopoverOpen.off();
+                                      resetError('customer');
                                     }}
                                     textAlign="left"
                                     fontWeight={400}
@@ -555,25 +789,126 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                                 ))}
                               </Flex>
                             ))
-                            // if user not found show empty message
+                            // if user not found show empty message with create button
                             .otherwise(() => (
-                              <Text color="secondary.500">{t('Empty customer')}</Text>
+                              <Flex flexDir="column" gap={3} alignItems="stretch">
+                                <Text color="secondary.500" textAlign="center" py={2}>
+                                  {customerSearchText.trim() 
+                                    ? t('No client found matching') + ` "${customerSearchText}"`
+                                    : t('No clients found')}
+                                </Text>
+                                <Button
+                                  size="sm"
+                                  colorScheme="primary"
+                                  className="bg-primary-400 hover:bg-primary-500"
+                                  leftIcon={<Add size={16} />}
+                                  onClick={() => {
+                                    setIsCustomerInsertForm(true);
+                                    setCustomerPopoverOpen.off();
+                                  }}
+                                >
+                                  {t('Create New Client')}
+                                </Button>
+                              </Flex>
                             ))}
                         </PopoverBody>
                       </PopoverContent>
                     </Popover>
                   )}
 
-                  {errors.get('customer') ? (
-                    <Text className="text-sm text-red-500">{t(errors.get('customer') as 'string')}</Text>
+                  {errors.get('customer') || validationResult.errors.get('customer') ? (
+                    <Text className="text-sm text-red-500">{t((errors.get('customer') || validationResult.errors.get('customer')) as 'string')}</Text>
                   ) : null}
                 </div>
 
                 {/* Caterer Selection (Searchable like airport) */}
                 <div className='flex-1 flex-col mt-2'>
                   <Text fontSize="sm" color="black" mb={1} fontWeight="medium">
-                    {t('Caterer / Delivery Person')}
+                    {t('Caterer / Delivery Person')} {validationResult.errors.get('caterer') && <Text as="span" color="red.500">*</Text>}
                   </Text>
+                  {isCatererUpdateFormOpen ? (
+                    <Box p={3} border="1px solid" borderColor="gray.200" borderRadius="md" bg="white">
+                      <Formik
+                        initialValues={{
+                          firstName: selectedCaterer?.firstName || selectedCaterer?.fullName?.split(' ')[0] || '',
+                          lastName: selectedCaterer?.lastName || selectedCaterer?.fullName?.split(' ').slice(1).join(' ') || '',
+                          email: selectedCaterer?.email || '',
+                          phoneNumber: selectedCaterer?.phoneNumber || '',
+                          airportId: selectedCaterer?.airport?.id || selectedCaterer?.address || '',
+                        }}
+                        onSubmit={async (values, actions) => {
+                          actions.setSubmitting(true);
+                          try {
+                            const { data } = await axios.put(`/api/users/${selectedCaterer?.id}`, {
+                              firstName: values.firstName,
+                              lastName: values.lastName,
+                              email: values.email,
+                              phoneNumber: values.phoneNumber,
+                              address: values.airportId,
+                              roleId: 7,
+                            });
+                            if (data?.success) {
+                              toast.success(t('Caterer updated successfully'));
+                              updateCaterer(data.content);
+                              setIsCatererUpdateFormOpen(false);
+                            }
+                          } catch (e: any) {
+                            toast.error(t(e.response?.data?.message || 'Failed to update caterer'));
+                          } finally {
+                            actions.setSubmitting(false);
+                          }
+                        }}
+                      >
+                        {({ isSubmitting, setFieldValue, values }) => (
+                          <form className="flex flex-col gap-2">
+                            <Input
+                              size="sm"
+                              placeholder={t('First name')}
+                              value={values.firstName}
+                              onChange={(e) => setFieldValue('firstName', e.target.value)}
+                            />
+                            <Input
+                              size="sm"
+                              placeholder={t('Last name')}
+                              value={values.lastName}
+                              onChange={(e) => setFieldValue('lastName', e.target.value)}
+                            />
+                            <Input
+                              size="sm"
+                              type="email"
+                              placeholder={t('Email')}
+                              value={values.email}
+                              onChange={(e) => setFieldValue('email', e.target.value)}
+                            />
+                            <Input
+                              size="sm"
+                              placeholder={t('Phone number')}
+                              value={values.phoneNumber}
+                              onChange={(e) => setFieldValue('phoneNumber', e.target.value)}
+                            />
+                            <HStack>
+                              <Button
+                                size="sm"
+                                onClick={() => setIsCatererUpdateFormOpen(false)}
+                                variant="outline"
+                              >
+                                {t('Cancel')}
+                              </Button>
+                              <Button
+                                size="sm"
+                                type="submit"
+                                colorScheme="primary"
+                                className="bg-primary-400 hover:bg-primary-500"
+                                isLoading={isSubmitting}
+                              >
+                                {t('Update')}
+                              </Button>
+                            </HStack>
+                          </form>
+                        )}
+                      </Formik>
+                    </Box>
+                  ) : (
                   <Box
                     ref={catererBoxRef}
                     className={`relative rounded-[6px] text-pink-800 cursor-pointer bg-white ${isAddingCaterer ? '' : 'border border-black-400 focus-within:border-pink-200'}`}
@@ -594,20 +929,66 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                             >
                               {selectedCaterer?.fullName || t('Search caterer or delivery person')}
                             </Box>
-                            <IconButton
-                              aria-label="Add new caterer"
-                              icon={<Add size="24" color="currentColor" />}
-                              size="md"
-                              colorScheme="gray"
-                              borderRadius="0 5px 5px 0"
-                              borderLeft="2px solid #ddd9"
-                              className="text-secondary-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsAddingCaterer(true);
-                                setCatererEditing(false);
-                              }}
-                            />
+                            <HStack gap="0">
+                              {selectedCaterer?.id ? (
+                                <>
+                                  <Tooltip label={t('Edit Caterer')} placement="top">
+                                    <IconButton
+                                      aria-label="Edit Caterer"
+                                      icon={<Edit2 size={18} color="white" />}
+                                      size="md"
+                                      colorScheme="blue"
+                                      variant="solid"
+                                      bg="blue.500"
+                                      _hover={{ bg: "blue.600" }}
+                                      borderRadius="0"
+                                      borderLeft="2px solid #ddd9"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCatererUpdateFormOpen(true);
+                                        setCatererEditing(false);
+                                      }}
+                                    />
+                                  </Tooltip>
+                                  <Tooltip label={t('Clear Caterer')} placement="top">
+                                    <IconButton
+                                      aria-label="Clear Caterer"
+                                      icon={<CloseCircle size={18} color="white" />}
+                                      size="md"
+                                      colorScheme="red"
+                                      variant="solid"
+                                      bg="red.500"
+                                      _hover={{ bg: "red.600" }}
+                                      borderRadius="0"
+                                      borderLeft="2px solid #ddd9"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedCaterer(null);
+                                        pos.setDeliveryCaterer(null);
+                                      }}
+                                    />
+                                  </Tooltip>
+                                </>
+                              ) : null}
+                              <Tooltip label={t('Create New Caterer')} placement="top">
+                                <IconButton
+                                  aria-label="Add new caterer"
+                                  icon={<Add size="24" color="white" />}
+                                  size="md"
+                                  colorScheme="green"
+                                  variant="solid"
+                                  bg="green.500"
+                                  _hover={{ bg: "green.600" }}
+                                  borderRadius="0 5px 5px 0"
+                                  borderLeft="2px solid #ddd9"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsAddingCaterer(true);
+                                    setCatererEditing(false);
+                                  }}
+                                />
+                              </Tooltip>
+                            </HStack>
                           </Flex>
                         </PopoverTrigger>
 
@@ -636,7 +1017,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                           {/* <Icon as={SearchNormal} className="text-pink-800 h-[18px] ml-4" /> */}
                           <Input
                             value={catererSearch}
-                            placeholder={t('Type caterer name or airport')}
+                            placeholder={t('Type caterer name, email, or airport code (IATA/ICAO)')}
                             onChange={(e) => {
                               setCatererSearch(e.target.value);
                               setCatererPage(1);
@@ -648,19 +1029,24 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                             }}
                             className="flex-1 bg-white border-none text-md placeholder-pink-700 p-0 font-normal focus:outline-none focus:ring-0"
                           />
-                          <IconButton
-                            aria-label={isAddingCaterer ? 'Cancel caterer form' : 'Add new caterer'}
-                            icon={<Add size="24" color="currentColor" />}
-                            size="md"
-                            colorScheme="gray"
-                            borderRadius="0 5px 5px 0"
-                            borderLeft="2px solid #ddd9"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setIsAddingCaterer(!isAddingCaterer);
-                              setCatererEditing(false);
-                            }}
-                          />
+                          <Tooltip label={t('Create New Caterer')} placement="top">
+                            <IconButton
+                              aria-label={isAddingCaterer ? 'Cancel caterer form' : 'Add new caterer'}
+                              icon={<Add size="24" color="white" />}
+                              size="md"
+                              colorScheme="green"
+                              variant="solid"
+                              bg="green.500"
+                              _hover={{ bg: "green.600" }}
+                              borderRadius="0 5px 5px 0"
+                              borderLeft="2px solid #ddd9"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsAddingCaterer(!isAddingCaterer);
+                                setCatererEditing(false);
+                              }}
+                            />
+                          </Tooltip>
                         </Flex>
 
                         {catererOptions.length > 0 && catererBoxRef.current && (
@@ -890,6 +1276,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                       </Box>
                     )}
                   </Box>
+                  )}
                 </div>
 
                 {/* Priority selection */}
@@ -918,7 +1305,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
               {/* Delivery Airport Dropdown */}
               <div className='flex-col flex-1 mt-2'>
                 <Text fontSize="sm" color="" mb={1} fontWeight="medium">
-                  {t('Delivery Airport')}
+                  {t('Delivery Airport')} {validationResult.errors.get('deliveryAirport') && <Text as="span" color="red.500">*</Text>}
                 </Text>
                 <Box
                   ref={airportBoxRef}
@@ -1181,33 +1568,48 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
                     </Box>
                   )}
                 </Box>
+                {errors.get('deliveryAirport') || validationResult.errors.get('deliveryAirport') ? (
+                  <Text className="text-sm text-red-500 mt-1">{t((errors.get('deliveryAirport') || validationResult.errors.get('deliveryAirport')) as 'string')}</Text>
+                ) : null}
               </div>
 
               <div className='flex flex-1 mt-2 gap-2 items-start'>
                 {/* Delivery date */}
                 <div className='flex-1'>
                   <Text fontSize="sm" color="black" mb={1} fontWeight="medium">
-                    {t('Delivery Date')}
+                    {t('Delivery Date')} {validationResult.errors.get('deliveryDate') && <Text as="span" color="red.500">*</Text>}
                   </Text>
                   <Input
                     type="date"
                     value={pos.deliveryDate}
-                    onChange={(e) => pos.setDeliveryDate(e.target.value)}
+                    onChange={(e) => {
+                      pos.setDeliveryDate(e.target.value);
+                      resetError('deliveryDate');
+                    }}
                     className="focus:border-primary-500 focus:outline-none focus:shadow-none mb-2 bg-white"
                   />
+                  {errors.get('deliveryDate') || validationResult.errors.get('deliveryDate') ? (
+                    <Text className="text-sm text-red-500">{t((errors.get('deliveryDate') || validationResult.errors.get('deliveryDate')) as 'string')}</Text>
+                  ) : null}
                 </div>
 
                 {/* Delivery time */}
                 <div className='flex-1'>
                   <Text fontSize="sm" color="black" mb={1} fontWeight="medium">
-                    {t('Delivery Time')} (24h)
+                    {t('Delivery Time')} (24h) {validationResult.errors.get('deliveryTime') && <Text as="span" color="red.500">*</Text>}
                   </Text>
                   <Input
                     type="time"
                     value={pos.deliveryTime}
-                    onChange={(e) => pos.setDeliveryTime(e.target.value)}
+                    onChange={(e) => {
+                      pos.setDeliveryTime(e.target.value);
+                      resetError('deliveryTime');
+                    }}
                     className="focus:border-primary-500 focus:outline-none focus:shadow-none mb-2 bg-white"
                   />
+                  {errors.get('deliveryTime') || validationResult.errors.get('deliveryTime') ? (
+                    <Text className="text-sm text-red-500">{t((errors.get('deliveryTime') || validationResult.errors.get('deliveryTime')) as 'string')}</Text>
+                  ) : null}
                 </div>
               </div>
 
@@ -1305,6 +1707,9 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
               onChange={pos.setPOSItems}
               searchItems={searchMenuItems}
             />
+            {errors.get('items') || validationResult.errors.get('items') ? (
+              <Text className="text-sm text-red-500 mt-2">{t((errors.get('items') || validationResult.errors.get('items')) as 'string')}</Text>
+            ) : null}
 
             <POSItemModal
               isOpen={isModalOpen}
@@ -1316,13 +1721,6 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
           <Divider mt={4} mb={2} />
           {/* Calculations */}
           <Flex flexDir="column" className="text-lg font-normal">
-            {/* Subtotal */}
-            <Box as="div" className="grid grid-cols-[1fr,100px] border-b py-1.5 border-black/5">
-              <Text> {t('Subtotal')}: </Text>
-              <Text fontWeight={500} textAlign="right">
-                {convertToCurrencyFormat(pos.subTotal)}
-              </Text>
-            </Box>
             {/* Charges */}
             {pos.POSCharges.map((charge: Charge) => (
               <Box
@@ -1337,80 +1735,50 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
               </Box>
             ))}
 
-            {/* Service charge (5%) */}
-            <Box as="div" className="grid grid-cols-[1fr,100px] border-b py-1.5 border-black/5">
-              <Box className="flex flex-wrap @xs:flex-nowrap items-center gap-3">
-                {t('Discount')}:
-                {pos.discount === 0 && !discount.show && (
-                  <Button
-                    size="sm"
-                    className="px-3"
-                    onClick={() => setDiscount({ ...discount, show: true })}
-                  >
-                    {t('Add Discount')}
-                  </Button>
-                )}
-                {discount.show && (
-                  <Button
-                    size="sm"
-                    className="px-3"
-                    onClick={() => {
-                      setDiscount({ ...discount, value: 0, show: false });
-                      pos.setDiscount(0, 'amount');
-                    }}
-                  >
-                    {t('Remove Discount')}
-                  </Button>
-                )}
-                {pos.discount !== 0 && !discount.show && (
-                  <Button
-                    size="sm"
-                    className="px-3"
-                    onClick={() =>
-                      setDiscount({
-                        ...discount,
-                        show: true,
-                      })
-                    }
-                  >
-                    {t('Edit Discount')}
-                  </Button>
-                )}
-              </Box>
-              <Text fontWeight={500} textAlign="right">
-                - {convertToCurrencyFormat(pos.discount)}
-              </Text>
-            </Box>
-            {discount.show && (
-              <Box as="div" className="grid grid-cols-[1fr,100px] gap-4 pt-2">
-                <HStack className="flex gap-3">
-                  <HStack>
-                    <DiscountTypeRadioGroup
-                      defaultValue={discount.type}
-                      onChange={(value) =>
-                        setDiscount((prev) => ({ ...prev, type: value as 'amount' | 'percentage' }))
-                      }
-                    />
-                  </HStack>
-                  <Input
-                    type="number"
-                    value={discount.value}
-                    onChange={(e) => setDiscount((prev) => ({ ...prev, value: +e.target.value }))}
-                    placeholder={t('Add discount')}
-                    onFocus={(e) => e.currentTarget.select()}
-                  />
-                </HStack>
-                <Button
-                  variant="outline"
-                  colorScheme="blue"
-                  type="button"
-                  onClick={() => addDiscount(discount)}
-                >
-                  {t('Add')}
-                </Button>
-              </Box>
-            )}
           </Flex>
+
+          {/* Specialty Item Shopping Fee and Service Charge */}
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={2} mt={4} mb={2}>
+            <FormControl>
+              <Text fontSize="sm" color="black" mb={1} fontWeight="medium">
+                {t('Specialty Item Shopping Fee')}
+              </Text>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <Text color="gray.500">$</Text>
+                </InputLeftElement>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={specialtyItemShoppingFee || ''}
+                  onChange={(e) => setSpecialtyItemShoppingFee(parseFloat(e.target.value) || 0)}
+                  className="focus:border-primary-500 focus:outline-none focus:shadow-none bg-white"
+                />
+              </InputGroup>
+            </FormControl>
+
+            <FormControl>
+              <Text fontSize="sm" color="black" mb={1} fontWeight="medium">
+                {t('Service Charge')}
+              </Text>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <Text color="gray.500">$</Text>
+                </InputLeftElement>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={serviceCharge || ''}
+                  onChange={(e) => setServiceCharge(parseFloat(e.target.value) || 0)}
+                  className="focus:border-primary-500 focus:outline-none focus:shadow-none bg-white"
+                />
+              </InputGroup>
+            </FormControl>
+          </SimpleGrid>
 
           <Box className="flex flex-col gap-3.5">
             {/* Total price ( Grand Total ) */}
@@ -1426,18 +1794,20 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
 
             {/* Payment type */}
             <Flex flexDir="column" gap="2">
-              <label>{t('Payment type')}</label>
+              <label>
+                {t('Payment type')} {validationResult.errors.get('paymentType') && <Text as="span" color="red.500">*</Text>}
+              </label>
               <PaymentTypeRadioGroup
                 defaultValue={pos.paymentType}
                 onChange={(value) => {
-                  pos.changePaymentType(value as 'stripe' | 'cash');
+                  pos.changePaymentType(value as 'card' | 'ach');
                   resetError('paymentType');
                 }}
               />
 
-              {errors.get('paymentType') ? (
+              {errors.get('paymentType') || validationResult.errors.get('paymentType') ? (
                 <Text className="text-sm text-red-500">
-                  {t(errors.get('paymentType') as 'string')}
+                  {t((errors.get('paymentType') || validationResult.errors.get('paymentType')) as 'string')}
                 </Text>
               ) : null}
             </Flex>
@@ -1448,7 +1818,7 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
         </Flex>
         {/* Submit / Clear button */}
         <HStack spacing={1} gap="3" p={2}>
-          <Button variant="outline" colorScheme="primary" w="full" onClick={() => pos.resetPOS()}>
+          <Button variant="outline" colorScheme="primary" w="full" onClick={() => resetPOSState()}>
             {t('Clear')}
           </Button>
           <Button
@@ -1457,9 +1827,10 @@ export const POSCheckoutForm = ({ searchMenuItems }: POSCheckoutFormProps) => {
             colorScheme="green"
             w="full"
             isLoading={isOrderProcessing}
-            disabled={isOrderProcessing}
+            disabled={isOrderProcessing || !isFormValid}
             rightIcon={<ArrowRight size={16} color="currentColor" />}
             onClick={() => onPlaceOrder(pos)}
+            title={!isFormValid ? Array.from(validationResult.errors.values()).join(', ') : ''}
           >
             {t('Save')}
           </Button>

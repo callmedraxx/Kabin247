@@ -42,10 +42,10 @@ export default function ActiveOrders() {
     { label: t('All'), value: 'all' },
     { label: t('Quote Pending'), value: 'quote_pending' },
     { label: t('Quote Sent'), value: 'quote_sent' },
-    { label: t('Awaiting Vendor Quote'), value: 'awaiting_vendor_quote' },
-    { label: t('Awaiting Vendor Confirmation'), value: 'awaiting_vendor_confirmation' },
+    { label: t('Awaiting Vendor Q.'), value: 'awaiting_vendor_quote' },
+    { label: t('Awaiting Vendor C.'), value: 'awaiting_vendor_confirmation' },
     { label: t('Vendor Confirmed'), value: 'vendor_confirmed' },
-    { label: t('Awaiting Client Confirmation'), value: 'awaiting_client_confirmation' },
+    { label: t('Awaiting Client C.'), value: 'awaiting_client_confirmation' },
     { label: t('Client Confirmed'), value: 'client_confirmed' },
   ];
 

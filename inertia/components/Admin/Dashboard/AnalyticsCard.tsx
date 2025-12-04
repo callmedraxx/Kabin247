@@ -22,14 +22,14 @@ export default function AnalyticsCard({
       {size === 'large' ? (
         <>
           <div>
-            <p className="font-medium mb-1">{title}</p>
-            <h2 className="text-3xl font-semibold">{value?.toLocaleString()}</h2>
+            <p className="font-medium mb-1 text-sm">{title}</p>
+            <h2 className="text-2xl font-semibold">{value?.toLocaleString()}</h2>
           </div>
           {icon}
         </>
       ) : (
         <>
-          <h2 className="text-xl font-bold mr-2">{value?.toLocaleString()}</h2>
+          <h2 className="text-lg font-bold mr-2">{value?.toLocaleString()}</h2>
           <div className="flex items-center gap-2">
             <p className="font-medium text-sm">{title}</p>
             {icon}

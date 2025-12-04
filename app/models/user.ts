@@ -7,6 +7,7 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid';
 import { DbRememberMeTokensProvider } from '@adonisjs/auth/session';
 import Role from '#models/role';
 import Token from '#models/token';
+import Roles from '../enum/roles.js';
 import { Filterable } from 'adonis-lucid-filter';
 import UserFilter from '#models/filters/user_filter';
 import Order from '#models/order';
@@ -103,6 +104,27 @@ export default class User extends compose(BaseModel, AuthFinder, Filterable) {
   @computed()
   get fullName(): string {
     return `${this.firstName ?? ''} ${this.lastName ?? ''}`.trim();
+  }
+
+  /**
+   * Check if user is a Client (CUSTOMER role)
+   */
+  get isClient(): boolean {
+    return this.roleId === Roles.CUSTOMER;
+  }
+
+  /**
+   * Check if user is Staff (all roles except CUSTOMER)
+   */
+  get isStaff(): boolean {
+    return this.roleId !== Roles.CUSTOMER;
+  }
+
+  /**
+   * Get user type as string: 'Client' or 'Staff'
+   */
+  get userType(): 'Client' | 'Staff' {
+    return this.isClient ? 'Client' : 'Staff';
   }
 
   static async isEmailUnique(email: string, roleId: number, userId?: number): Promise<boolean> {

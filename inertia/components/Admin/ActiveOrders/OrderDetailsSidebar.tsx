@@ -23,8 +23,10 @@ import {
   DrawerBody,
   Icon,
   Select,
+  Collapse,
+  useDisclosure,
 } from '@chakra-ui/react';
-import { ArrowDown2, User } from 'iconsax-react';
+import { ArrowDown2, User, ArrowUp2 } from 'iconsax-react';
 import fetcher from '../../../lib/fetcher';
 import { startCase } from '../../../utils/string_formatter';
 import { convertToCurrencyFormat } from '../../../utils/currency_formatter';
@@ -41,7 +43,7 @@ import { Charge } from '../../../types/pos_type';
 import UpdateDeliveryAirport from './UpdateDeliveryAirport';
 
 type OrderType = 'dine_in' | 'delivery' | 'pickup';
-type PaymentType = 'cash' | 'card';
+type PaymentType = 'card' | 'ach';
 
 const orderStatus = new OrderStatus();
 
@@ -78,6 +80,7 @@ export default function OrderDetailsSidebar({
     value: 0,
     show: false,
   });
+  const { isOpen: isPricingOpen, onToggle: onPricingToggle } = useDisclosure({ defaultIsOpen: false });
 
   const {
     props: { branding },
@@ -193,10 +196,9 @@ export default function OrderDetailsSidebar({
                   {t('Order details')}
                 </Text>
 
-                {/* Order details */}
-                <div className="order-details-grid md:gap-[30px]">
-                  {/* Order Number */}
-                  <div className="lg:w-fit flex flex-col gap-1 pb-[30px] lg:border-b border-black/5">
+                {/* Order Number, Type, Status - Header Info */}
+                <div className="order-details-grid md:gap-[30px] mb-6">
+                  <div className="lg:w-fit flex flex-col gap-1">
                     <Text className="text-base font-normal text-secondary-400">
                       {t('Order number')}
                     </Text>
@@ -205,12 +207,10 @@ export default function OrderDetailsSidebar({
                     </Text>
                   </div>
 
-                  {/* Order Type */}
-                  <div className="md:w-fit flex flex-col gap-1 pb-[30px] border-b border-black/5">
+                  <div className="md:w-fit flex flex-col gap-1">
                     <Text className="text-base font-normal text-secondary-400">
                       {t('Order type')}
                     </Text>
-
                     {status.value === 'quote_pending' ? (
                       <Menu>
                         <MenuButton
@@ -245,10 +245,8 @@ export default function OrderDetailsSidebar({
                     )}
                   </div>
 
-                  {/* Order Status */}
-                  <div className="md:w-fit flex flex-col gap-1 pb-[30px] border-b border-black/5">
+                  <div className="md:w-fit flex flex-col gap-1">
                     <Text className="text-base font-normal text-secondary-400">{t('Status')}</Text>
-
                     <Menu>
                       <MenuButton
                         as={Button}
@@ -272,52 +270,144 @@ export default function OrderDetailsSidebar({
                       </MenuList>
                     </Menu>
                   </div>
+                </div>
 
-                  {/* Delivery date */}
-                  <div className="md:w-fit flex flex-col gap-1">
-                    <Text className="text-base font-normal text-secondary-400">
-                      {t('Delivery date')}
+                <Divider className="border-black/5 mb-6" />
+
+                {/* Order Description/Note - Prominent and Larger */}
+                <div className="mb-6">
+                  <Text className="text-base font-semibold text-secondary-600 mb-2">
+                    {t('Order Description')}
+                  </Text>
+                  {status.value !== 'quote_pending' ? (
+                    <Box className="bg-gray-50 border border-gray-200 rounded-md p-4 min-h-[100px]">
+                      <Text className="text-secondary-700 whitespace-pre-wrap">
+                        {customerNote || <span className="text-secondary-400 italic">{t('No description provided')}</span>}
+                      </Text>
+                    </Box>
+                  ) : (
+                    <Textarea
+                      value={customerNote}
+                      onChange={(e) => setCustomerNote(e.target.value)}
+                      placeholder={t('Enter order description, special instructions, dietary requirements, etc.')}
+                      rows={5}
+                      className="min-h-[120px]"
+                      resize="vertical"
+                    />
+                  )}
+                </div>
+
+                <Divider className="border-black/5 mb-6" />
+
+                {/* Order Items - Prioritized */}
+                <div className="mb-6">
+                  <Text className="text-base font-semibold text-secondary-600 mb-3">
+                    {t('Order Items')}
+                  </Text>
+                  <OrderItemList items={orderItem?.orderItems} />
+                </div>
+
+                <Divider className="border-black/5 mb-6" />
+
+                {/* Delivery Information - Prioritized */}
+                {orderItem?.type === 'delivery' && (
+                  <div className="mb-6">
+                    <Text className="text-base font-semibold text-secondary-600 mb-4">
+                      {t('Delivery Information')}
                     </Text>
-                    <Text as="h3" className="text-secondary-600 text-xl font-semibold">
-                      {new Date(orderItem?.deliveryDate).toLocaleDateString()}
-                    </Text>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                      <div>
+                        <Text className="text-sm font-medium text-blue-800 mb-1">
+                          {t('Delivery Date & Time')}
+                        </Text>
+                        <Text className="text-blue-900 font-semibold">
+                          {new Date(orderItem?.deliveryDate).toLocaleDateString()} {orderItem?.deliveryTime ? `at ${orderItem.deliveryTime}` : ''}
+                        </Text>
+                      </div>
+
+                      <div>
+                        <Text className="text-sm font-medium text-blue-800 mb-1">
+                          {t('Delivery Airport')}
+                        </Text>
+                        <UpdateDeliveryAirport
+                          airport={orderItem?.deliveryAirport}
+                          orderId={orderItem?.id}
+                          status={orderItem.status}
+                          refresh={refresh}
+                        />
+                        {orderItem?.deliveryAirport && (
+                          <Text className="text-blue-900 text-sm mt-1">
+                            {orderItem.deliveryAirport.fboName || orderItem.deliveryAirport.name || ''}
+                            {orderItem.deliveryAirport.iataCode || orderItem.deliveryAirport.icaoCode 
+                              ? ` (${[orderItem.deliveryAirport.iataCode, orderItem.deliveryAirport.icaoCode].filter(Boolean).join(' / ')})`
+                              : ''}
+                          </Text>
+                        )}
+                      </div>
+
+                      <div>
+                        <Text className="text-sm font-medium text-blue-800 mb-1">
+                          {t('Caterer')}
+                        </Text>
+                        <UpdateDeliveryPerson
+                          deliveryPerson={orderItem?.deliveryMan}
+                          status={orderItem.status}
+                          orderId={orderItem?.id}
+                          refresh={refresh}
+                        />
+                      </div>
+                    </div>
                   </div>
+                )}
 
-                  {/* Payment method */}
-                  <div className="md:w-fit flex flex-col gap-1">
-                    <Text className="text-base font-normal text-secondary-400">
-                      {t('Payment method')}
-                    </Text>
+                <Divider className="border-black/5 mb-6" />
 
-                    <Menu>
-                      <MenuButton
-                        as={Button}
-                        variant="outline"
-                        rightIcon={<ArrowDown2 />}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {t(startCase(paymentType))}
-                      </MenuButton>
-                      <MenuList>
-                        {['cash', 'card'].map((item) => (
-                          <MenuItem key={item} onClick={() => setPaymentType(item as PaymentType)}>
-                            {t(startCase(item))}
-                          </MenuItem>
-                        ))}
-                      </MenuList>
-                    </Menu>
+                {/* Client Information */}
+                <div className="mb-6">
+                  <Text className="text-base font-semibold text-secondary-600 mb-2">
+                    {t('Client Information')}
+                  </Text>
+                  <div className='flex items-center p-3 w-full rounded-md border border-solid border-orange-300 bg-orange-50 text-orange-800'>
+                    <Icon as={User} boxSize="16px" className='mr-2' />
+                    <Text className="font-medium">{customer}</Text>
                   </div>
+                </div>
 
-                  {/* Payment Status */}
-                  <div className="flex flex-col gap-1">
-                    <Text className="text-base font-normal text-secondary-400">
-                      {t('Payment status')}
-                    </Text>
-                    <Flex
-                      justifyContent="space-between"
-                      alignItems="center"
-                      className="text-secondary-600 text-xl font-semibold"
-                    >
+                <Divider className="border-black/5 mb-6" />
+
+                {/* Payment Information - Secondary/Collapsible */}
+                <div className="mb-6">
+                  <Text className="text-base font-semibold text-secondary-600 mb-4">
+                    {t('Payment Information')}
+                  </Text>
+                  <div className="order-details-grid md:gap-[30px]">
+                    <div className="md:w-fit flex flex-col gap-1">
+                      <Text className="text-base font-normal text-secondary-400">
+                        {t('Payment method')}
+                      </Text>
+                      <Menu>
+                        <MenuButton
+                          as={Button}
+                          variant="outline"
+                          rightIcon={<ArrowDown2 />}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {t(startCase(paymentType))}
+                        </MenuButton>
+                        <MenuList>
+                          {['cash', 'card'].map((item) => (
+                            <MenuItem key={item} onClick={() => setPaymentType(item as PaymentType)}>
+                              {t(startCase(item))}
+                            </MenuItem>
+                          ))}
+                        </MenuList>
+                      </Menu>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <Text className="text-base font-normal text-secondary-400">
+                        {t('Payment status')}
+                      </Text>
                       <Select
                         value={paymentStatus}
                         onChange={(e) => {
@@ -331,89 +421,32 @@ export default function OrderDetailsSidebar({
                         <option value="payment_requested">{t('Payment Requested')}</option>
                         <option value="paid">{t('Paid')}</option>
                       </Select>
-                    </Flex>
-                  </div>
-
-                  {/* Customer */}
-                  <div className='col-span-2'>
-                    <span className='font-medium text-[#A0AEC0]'>
-                      Client
-                    </span>
-                    <div className='flex items-center mt-1 p-2 px-4 w-full rounded-[6px] border border-solid border-[1px] border-orange-300 text-orange-800'>
-                      <Icon as={User} size="sm" className='mr-2' />
-                      {customer}
                     </div>
                   </div>
-
-                  {/* Delivery person */}
-                  {orderItem?.type === 'delivery' && (
-                    <>
-                      <div className="col-span-2">
-                        <div className="flex flex-col gap-1">
-                          <Text className="text-base font-normal text-secondary-400">
-                            {t('Caterer')}
-                          </Text>
-
-                          <UpdateDeliveryPerson
-                            deliveryPerson={orderItem?.deliveryMan}
-                            status={orderItem.status}
-                            orderId={orderItem?.id}
-                            refresh={refresh}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-span-2">
-                        <div className="flex flex-col gap-1">
-                          <Text className="text-base font-normal text-secondary-400">
-                            {t('Delivery Airport')}
-                          </Text>
-
-                          <UpdateDeliveryAirport
-                            airport={orderItem?.deliveryAirport}
-                            orderId={orderItem?.id}
-                            status={orderItem.status}
-                            refresh={refresh}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
-              </div>
 
-              <Divider className="border-black/5" />
-
-              {/* User note */}
-              <div className="mt-3 mb-4">
-                <div className="flex flex-col space-y-2">
-                  <Text className="text-base font-normal text-secondary-400">
-                    {t('Order note')}
-                  </Text>
-                  {status.value !== 'quote_pending' ? (
-                    <Text>
-                      {customerNote || <span className="text-secondary-500"> {t('Empty')}</span>}
+                {/* Financial Details - Collapsible */}
+                <div className="mb-6">
+                  <Button
+                    variant="ghost"
+                    onClick={onPricingToggle}
+                    rightIcon={isPricingOpen ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
+                    className="w-full justify-between"
+                    size="sm"
+                  >
+                    <Text className="text-base font-semibold text-secondary-600">
+                      {t('Financial Details')}
                     </Text>
-                  ) : (
-                    <Textarea
-                      value={customerNote}
-                      onChange={(e) => setCustomerNote(e.target.value)}
-                      placeholder={t('Write customer note')}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Order items */}
-              <OrderItemList items={orderItem?.orderItems} />
-
-              <div className="mt-4 flex flex-col gapy-2 [&>div]:border-b [&>div]:border-black/5 [&>div]:py-1 [&>div]:px-4">
-                {/* Subtotal */}
-                <div className="grid grid-cols-[1fr,150px] text-lg">
-                  <div> {t('Subtotal')}: </div>
-                  <h4 className="font-medium text-right">
-                    {convertToCurrencyFormat(orderItem?.total)}
-                  </h4>
-                </div>
+                  </Button>
+                  <Collapse in={isPricingOpen} animateOpacity>
+                    <Box className="mt-4 flex flex-col gapy-2 [&>div]:border-b [&>div]:border-black/5 [&>div]:py-1 [&>div]:px-4 bg-gray-50 rounded-md p-4">
+                      {/* Subtotal */}
+                      <div className="grid grid-cols-[1fr,150px] text-lg">
+                        <div> {t('Subtotal')}: </div>
+                        <h4 className="font-medium text-right">
+                          {convertToCurrencyFormat(orderItem?.total)}
+                        </h4>
+                      </div>
 
                 {/* Vat/Tax */}
                 {charges?.map((charge: any) => (
@@ -512,11 +545,14 @@ export default function OrderDetailsSidebar({
                     </Button>
                   </Box>
                 )}
+                    </Box>
+                  </Collapse>
+                </div>
               </div>
-            </div >
+            </div>
 
             {/* Footer actions */}
-            < Box
+            <Box
               px="4"
               pt="2"
               pb="4"
@@ -552,7 +588,7 @@ export default function OrderDetailsSidebar({
           </>
         ))
       }
-    </div >
+    </div>
   );
 
   // drawer

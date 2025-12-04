@@ -36,6 +36,7 @@ import '../app/routes/payment_method_route.js';
 import '../app/routes/page_route.js';
 import '../app/routes/airports_route.js';
 import '../app/routes/caterers_route.js';
+import '../app/routes/stock_inventory_route.js';
 
 // Swagger API Documentation routes
 const SwaggerController = () => import('#controllers/swagger_controller');
@@ -106,6 +107,7 @@ router
     router.on('/earning-report').renderInertia('Admin/Reports/EarningReport');
     router.on('/order-report').renderInertia('Admin/Reports/OrderReports');
     router.on('/promotions').renderInertia('Admin/Promotions');
+    router.on('/stock-inventory').renderInertia('Admin/StockInventory');
   })
   .prefix('/admin')
   .use([middleware.auth({ guards: ['web'] }), middleware.role({ guards: ['admin'] })]);
@@ -143,6 +145,7 @@ router
     router.on('/earning-report').renderInertia('Admin/Reports/EarningReport');
     router.on('/order-report').renderInertia('Admin/Reports/OrderReports');
     router.on('/promotions').renderInertia('Admin/Promotions');
+    router.on('/stock-inventory').renderInertia('Admin/StockInventory');
   })
   .prefix('/manager')
   .use([middleware.auth({ guards: ['web'] }), middleware.role({ guards: ['manager'] })]);

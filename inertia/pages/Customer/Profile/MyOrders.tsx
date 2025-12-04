@@ -116,8 +116,8 @@ export default function MyOrders() {
       setPayingId(order.id);
 
       const paymentType = getPaymentType(order);
-      if (paymentType === 'cash') {
-        toast.info(t('This order was placed as cash on delivery.'));
+      if (paymentType === 'ach') {
+        toast.info(t('This order was placed with ACH payment.'));
         return;
       }
 
@@ -152,7 +152,7 @@ export default function MyOrders() {
               const status = orderStatus.getStatusDetails(order.status);
               const isUnpaid = order.paymentStatus === 'unpaid';
               const paymentType = getPaymentType(order);
-              const isCash = paymentType === 'cash';
+              const isAch = paymentType === 'ach';
 
               return (
                 <AccordionItem
@@ -190,10 +190,10 @@ export default function MyOrders() {
                           px="4"
                           py="1.5"
                           rounded="full"
-                          className={isUnpaid && !isCash ? 'cursor-pointer capitalize' : 'capitalize'}
-                          title={isUnpaid && !isCash ? t('Click to pay') : undefined}
+                          className={isUnpaid && !isAch ? 'cursor-pointer capitalize' : 'capitalize'}
+                          title={isUnpaid && !isAch ? t('Click to pay') : undefined}
                           onClick={(e) => {
-                            if (!(isUnpaid && !isCash)) return;
+                            if (!(isUnpaid && !isAch)) return;
                             e.stopPropagation();
                             handlePay(order);
                           }}
@@ -219,7 +219,7 @@ export default function MyOrders() {
                         )}
 
                         {/* Only show "Pay now" for unpaid + non-cash (defaults to stripe) */}
-                        {isUnpaid && !isCash && (
+                        {isUnpaid && !isAch && (
                           <Button
                             size="sm"
                             colorScheme="primary"

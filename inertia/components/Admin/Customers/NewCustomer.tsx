@@ -68,24 +68,89 @@ export default function NewCustomer({ refresh }: { refresh: () => void }) {
               isEmailVerified: true,
             }}
             onSubmit={async (values, actions) => {
+              // Ensure all fields are touched so errors are visible
+              if (values) {
+                const fieldNames = Object.keys(values);
+                fieldNames.forEach((field) => {
+                  actions.setFieldTouched(field, true);
+                });
+              }
+
               try {
                 actions.setSubmitting(true);
-                const { data } = await axios.post('/api/users', values);
+                // Prepare payload - handle address fields properly
+                const payload: any = {
+                  firstName: values?.firstName?.trim() || '',
+                  lastName: values?.lastName?.trim() || undefined,
+                  companyName: values?.companyName?.trim() || undefined,
+                  email: values?.email?.trim() || '',
+                  secondEmail: values?.secondEmail?.trim() || undefined,
+                  phoneNumber: values?.phoneNumber?.trim() || '',
+                  secondPhoneNumber: values?.secondPhoneNumber?.trim() || undefined,
+                  roleId: values?.roleId || 6,
+                  isEmailVerified: values?.isEmailVerified ?? true,
+                  // Include clientAddress if provided (free-form text address)
+                  ...(values?.clientAddress && values.clientAddress.trim() 
+                    ? { clientAddress: values.clientAddress.trim() } 
+                    : {}),
+                  // Only include address (airport ID) if it's a valid number, otherwise omit it
+                  ...(values?.address && values.address.toString().trim() && !isNaN(Number(values.address)) 
+                    ? { address: Number(values.address) } 
+                    : {}),
+                };
+                const { data } = await axios.post('/api/users', payload);
                 if (data?.success) {
+                  actions.resetForm();
                   onClose();
                   refresh();
                   toast.success(t(data?.message) || t('Client created successfully'));
+                } else {
+                  // Handle unexpected success:false response
+                  toast.error(t(data?.message) || t('Failed to create client'));
                 }
-              } catch (e) {
-                toast.error(t(e.response.data.message) || t('Something went wrong'));
+              } catch (e: any) {
+                // Handle validation errors from backend
+                if (e?.response?.status === 422 && e?.response?.data?.messages) {
+                  // Backend validation errors (field-level)
+                  const errorMessages: string[] = [];
+                  e.response.data.messages.forEach((message: { field: string; message: string }) => {
+                    // Map backend field names to form field names if needed
+                    const fieldName = message.field;
+                    actions.setFieldError(fieldName, t(message.message));
+                    errorMessages.push(`${t(fieldName)}: ${t(message.message)}`);
+                  });
+                  // Show a general toast with all errors
+                  if (errorMessages.length > 0) {
+                    toast.error(t('Please fix the following errors:') + ' ' + errorMessages.join(', '));
+                  }
+                } else if (e?.response?.status === 422 && e?.response?.data?.errors) {
+                  // Alternative error format
+                  const errors = e.response.data.errors;
+                  Object.keys(errors).forEach((field) => {
+                    const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                    actions.setFieldError(field, t(errorMsg));
+                  });
+                  toast.error(t('Please fix the validation errors'));
+                } else if (e?.response?.data?.message) {
+                  // General error message from backend
+                  toast.error(t(e.response.data.message));
+                } else if (e?.message) {
+                  // Network or other errors
+                  toast.error(t(e.message) || t('Failed to create client. Please try again.'));
+                } else {
+                  // Fallback error
+                  toast.error(t('Something went wrong. Please check your input and try again.'));
+                }
               } finally {
                 actions.setSubmitting(false);
               }
             }}
             validationSchema={NewCustomerSchema}
+            validateOnBlur={true}
+            validateOnChange={true}
             className="h-full"
           >
-            {({ isSubmitting }) => (
+            {({ isSubmitting, errors, touched }) => (
               <Form className='overflow-y-auto'>
                 <DrawerBody>
                   <div className="flex flex-col gap-5">
@@ -93,6 +158,23 @@ export default function NewCustomer({ refresh }: { refresh: () => void }) {
                       <FieldRenderer key={item.name} item={item} />
                     ))}
                   </div>
+                  {/* Show general validation errors if any */}
+                  {Object.keys(errors).length > 0 && Object.keys(touched).length > 0 && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm font-medium text-red-800 mb-1">
+                        {t('Please fix the following errors:')}
+                      </p>
+                      <ul className="text-sm text-red-700 list-disc list-inside">
+                        {Object.entries(errors)
+                          .filter(([field]) => touched[field as keyof typeof touched])
+                          .map(([field, error]) => (
+                            <li key={field}>
+                              {fieldItems.find((item) => item.name === field)?.label || field}: {t(error as string)}
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
                 </DrawerBody>
                 <DrawerFooter
                   borderTopWidth="1px"

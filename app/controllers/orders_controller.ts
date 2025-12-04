@@ -2,6 +2,7 @@ import errorHandler from '#exceptions/error_handler';
 import Order from '#models/order';
 import {
   bulkCustomUpdateValidator,
+  bulkDeleteValidator,
   customUpdateValidator,
   orderCalculationValidator,
   orderUpdateValidator,
@@ -19,6 +20,8 @@ import StripePayment from '#services/payment/stripe';
 import PaymentMethod from '#models/payment_method';
 import transmit from '@adonisjs/transmit/services/main';
 import mail from '@adonisjs/mail/services/main';
+import pdfService from '#services/pdf_service';
+import emailMessagesService from '#services/email_messages_service';
 
 type OrderItemType = {
   id: number;
@@ -532,6 +535,10 @@ export default class OrdersController {
       const businessSetup = await BusinessSetup.firstOrFail();
       const branding = await Setting.findBy('key', 'branding');
 
+      // Format airport code for delivery fee label
+      const airportCode = order.deliveryAirport?.iataCode || order.deliveryAirport?.icaoCode || '';
+      const deliveryFeeLabel = airportCode ? `${airportCode} Delivery Fee` : 'Delivery Fee';
+
       return await view.render('invoice', {
         order,
         itemsForPrint,
@@ -539,6 +546,9 @@ export default class OrdersController {
         formattedDate,
         businessInfo: businessSetup,
         baseUrl: branding?.value1 || '',
+        deliveryFeeLabel,
+        specialtyItemShoppingFee: order.specialtyItemShoppingFee || 0,
+        serviceCharge: order.serviceCharge || 0,
       });
     } catch (error) {
       errorHandler(error, response, logger, 'Print Invoice By Id Error');
@@ -679,8 +689,11 @@ export default class OrdersController {
         chargesData,
       } = await this.processOrderItems(orderItems || []);
 
+      const specialtyItemShoppingFee = payload.specialtyItemShoppingFee || 0;
+      const serviceCharge = payload.serviceCharge || 0;
+
       let grandTotal =
-        total + totalTax + totalCharges + deliveryCharge - discount - (payload.manualDiscount || 0);
+        total + totalTax + totalCharges + deliveryCharge + specialtyItemShoppingFee + serviceCharge - discount - (payload.manualDiscount || 0);
 
       if (grandTotal < 0) {
         return response.badRequest({
@@ -701,6 +714,8 @@ export default class OrdersController {
         discount: discount,
         manualDiscount: payload.manualDiscount || 0,
         deliveryCharge,
+        specialtyItemShoppingFee,
+        serviceCharge,
         grandTotal,
       });
 
@@ -709,7 +724,7 @@ export default class OrdersController {
 
       const data = await this.fetchOrderWithRelations(order.id);
 
-      if (auth.user!.roleId === Roles.ADMIN && !['cash', 'card'].includes(payload.paymentType)) {
+      if (auth.user!.roleId === Roles.ADMIN && !['card', 'ach'].includes(payload.paymentType)) {
         const methodConfig = await PaymentMethod.query()
           .where('key', payload.paymentType)
           .andWhere('status', true)
@@ -1012,6 +1027,158 @@ export default class OrdersController {
 
   /**
    * @swagger
+   * /api/orders/bulk/delete:
+   *   delete:
+   *     summary: Bulk delete orders
+   *     tags: [Orders]
+   *     security:
+   *       - sessionAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - ids
+   *             properties:
+   *               ids:
+   *                 type: array
+   *                 items:
+   *                   type: number
+   *     responses:
+   *       200:
+   *         description: Orders deleted successfully
+   */
+  async bulkDelete({ logger, request, response }: HttpContext) {
+    try {
+      const payload = await request.validateUsing(bulkDeleteValidator);
+      await Order.query().whereIn('id', payload.ids).delete();
+      transmit.broadcast('orders', { success: true });
+      return response.json({ success: true, message: 'Orders deleted successfully' });
+    } catch (error) {
+      errorHandler(error, response, logger, 'Bulk Deleting Orders Error');
+    }
+  }
+
+  /**
+   * @swagger
+   * /api/orders/{id}/duplicate:
+   *   post:
+   *     summary: Duplicate an order
+   *     tags: [Orders]
+   *     security:
+   *       - sessionAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       201:
+   *         description: Order duplicated successfully
+   */
+  async duplicate({ logger, params, response }: HttpContext) {
+    try {
+      const { id } = params as { id: number };
+      const originalOrder = await this.fetchOrderWithRelations(id);
+
+      if (!originalOrder) {
+        return response.notFound({ success: false, message: 'Order not found' });
+      }
+
+      // Generate new order number
+      const { generateUniqueOrderNumber } = await import('../utils/generate_unique_id.js');
+      const newOrderNumber = await generateUniqueOrderNumber();
+
+      // Prepare order data (exclude id, orderNumber, status, paymentStatus)
+      const orderData = {
+        userId: originalOrder.userId,
+        type: originalOrder.type,
+        totalQuantity: originalOrder.totalQuantity,
+        total: originalOrder.total,
+        totalTax: originalOrder.totalTax,
+        totalCharges: originalOrder.totalCharges,
+        discount: originalOrder.discount,
+        manualDiscount: originalOrder.manualDiscount,
+        deliveryCharge: originalOrder.deliveryCharge,
+        specialtyItemShoppingFee: originalOrder.specialtyItemShoppingFee || 0,
+        serviceCharge: originalOrder.serviceCharge || 0,
+        grandTotal: originalOrder.grandTotal,
+        paymentType: originalOrder.paymentType,
+        paymentStatus: 'unpaid' as const,
+        customerNote: originalOrder.customerNote,
+        note: originalOrder.note,
+        packagingNote: originalOrder.packagingNote,
+        reheatMethod: originalOrder.reheatMethod,
+        tailNumber: originalOrder.tailNumber,
+        deliveryDate: originalOrder.deliveryDate,
+        deliveryTime: originalOrder.deliveryTime,
+        priority: originalOrder.priority,
+        deliveryManId: originalOrder.deliveryManId,
+        catererId: originalOrder.catererId,
+        deliveryAirportId: originalOrder.deliveryAirportId,
+        vendorCost: originalOrder.vendorCost || 0,
+        dietaryRes: originalOrder.dietaryRes,
+        status: 'quote_pending' as const,
+        orderNumber: newOrderNumber,
+      };
+
+      // Create duplicated order
+      const duplicatedOrder = await Order.create(orderData);
+
+      // Copy order items
+      if (originalOrder.orderItems && originalOrder.orderItems.length > 0) {
+        const orderItemsData = originalOrder.orderItems.map((item: any) => ({
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          quantity: item.quantity,
+          variants: item.variants,
+          addons: item.addons,
+          charges: item.charges,
+          addonsAmount: item.addonsAmount || 0,
+          variantsAmount: item.variantsAmount || 0,
+          discountAmount: item.discountAmount || 0,
+          totalPrice: item.totalPrice,
+          grandPrice: item.grandPrice,
+          menuItemId: item.menuItemId,
+          variantId: item.variantId,
+        }));
+
+        await duplicatedOrder.related('orderItems').createMany(orderItemsData);
+      }
+
+      // Copy order charges
+      if (originalOrder.orderCharges && originalOrder.orderCharges.length > 0) {
+        const chargesData = originalOrder.orderCharges.map((charge: any) => ({
+          name: charge.name,
+          type: charge.type,
+          amount: charge.amount,
+          amountType: charge.amountType,
+          chargeId: charge.chargeId,
+        }));
+
+        await duplicatedOrder.related('orderCharges').createMany(chargesData);
+      }
+
+      // Fetch the duplicated order with relations
+      const duplicatedOrderWithRelations = await this.fetchOrderWithRelations(duplicatedOrder.id);
+
+      transmit.broadcast('orders', { success: true });
+      return response.created({
+        success: true,
+        message: 'Order duplicated successfully',
+        content: duplicatedOrderWithRelations,
+      });
+    } catch (error) {
+      errorHandler(error, response, logger, 'Duplicate Order Error');
+    }
+  }
+
+  /**
+   * @swagger
    * /api/orders/{id}/notify/{target}:
    *   post:
    *     summary: Send notification for order
@@ -1033,10 +1200,190 @@ export default class OrdersController {
    *       200:
    *         description: Notification sent successfully
    */
+  /**
+   * @swagger
+   * /api/orders/{id}/email-estimate:
+   *   post:
+   *     summary: Send estimate email to client
+   *     tags: [Orders]
+   *     security:
+   *       - sessionAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Estimate emailed successfully
+   */
+  async emailEstimate({ logger, params, response, view, request }: HttpContext) {
+    try {
+      const { id } = params as { id: number };
+      const { includeInvoice: _includeInvoice } = request.only(['includeInvoice']);
+      const order = await this.fetchOrderWithRelations(id);
+
+      if (!order.user?.email) {
+        return response.badRequest({ success: false, message: 'Client email not found' });
+      }
+
+      const businessInfo = await BusinessSetup.firstOrFail();
+      const brandingSetting = await Setting.findBy('key', 'branding');
+      const baseUrl = brandingSetting?.value1 || '';
+      const formattedDate = DateTime.fromISO(String(order.createdAt || '')).isValid
+        ? DateTime.fromISO(String(order.createdAt)).toFormat('yyyy-MM-dd')
+        : '';
+
+      // Build invoice/estimate data for PDF generation
+      const { itemsForPrint, orderCharges } = await this.buildInvoiceData(order);
+
+      // Generate PDF (always include pricing for estimates)
+      const pdfBuffer = await pdfService.generateInvoicePdf(view, {
+        order,
+        itemsForPrint,
+        orderCharges,
+        formattedDate,
+        businessInfo,
+        baseUrl,
+      });
+
+      // Get email message for estimate
+      const clientName = order.user?.firstName || order.user?.fullName || 'Client';
+      const emailMessage = {
+        subject: `Order Estimate #${order.orderNumber}`,
+        body: `Dear ${clientName},
+
+ESTIMATE / QUOTE
+
+Thank you for considering us to manage your order. Please find order estimate attached with pricing details.
+
+Client Contact:
+${clientName}
+${order.user?.email || ''}
+${order.user?.phoneNumber ? `Phone: ${order.user.phoneNumber}` : ''}
+
+Kindly advise if we may confirm this request?
+
+Here if you have any questions.
+
+Sincerely,
+Kabin247 Inflight Support
+One point of contact for your global inflight needs.`,
+      };
+
+      // Generate PDF filename
+      const pdfFilename = `Estimate-${order.orderNumber || order.id}.pdf`;
+
+      // Send email with PDF attachment
+      await mail.send((message) => {
+        message
+          .to(order.user!.email)
+          .from(process.env.SMTP_EMAIL!, businessInfo.name || '')
+          .subject(emailMessage.subject)
+          .text(emailMessage.body)
+          .attachData(pdfBuffer, {
+            filename: pdfFilename,
+            contentType: 'application/pdf',
+          });
+      });
+
+      return response.ok({ success: true, message: 'Estimate emailed to client.' });
+    } catch (error) {
+      errorHandler(error, response, logger, 'Email Estimate Error');
+    }
+  }
+
+  /**
+   * @swagger
+   * /api/orders/{id}/email-confirmation:
+   *   post:
+   *     summary: Send confirmation email to client
+   *     tags: [Orders]
+   *     security:
+   *       - sessionAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Confirmation emailed successfully
+   */
+  async emailConfirmation({ logger, params, response, view, request }: HttpContext) {
+    try {
+      const { id } = params as { id: number };
+      const { includeInvoice: _includeInvoice } = request.only(['includeInvoice']);
+      const order = await this.fetchOrderWithRelations(id);
+
+      if (!order.user?.email) {
+        return response.badRequest({ success: false, message: 'Client email not found' });
+      }
+
+      const businessInfo = await BusinessSetup.firstOrFail();
+      const brandingSetting = await Setting.findBy('key', 'branding');
+      const baseUrl = brandingSetting?.value1 || '';
+      const formattedDate = DateTime.fromISO(String(order.createdAt || '')).isValid
+        ? DateTime.fromISO(String(order.createdAt)).toFormat('yyyy-MM-dd')
+        : '';
+
+      // Build confirmation data for PDF generation (without pricing)
+      const { itemsForPrint, orderCharges } = await this.buildInvoiceData(order);
+
+      // Generate PDF for confirmation (pricing hiding will be handled in template if needed)
+      const pdfBuffer = await pdfService.generateInvoicePdf(view, {
+        order,
+        itemsForPrint,
+        orderCharges,
+        formattedDate,
+        businessInfo,
+        baseUrl,
+      });
+
+      // Get email message for confirmation
+      const emailMessage = {
+        subject: `Order Confirmation #${order.orderNumber}`,
+        body: `Dear ${order.user?.firstName || order.user?.fullName || 'Client'},
+
+Thank you for allowing us to manage your inflight provisioning request. Your order and/or update has been confirmed.
+
+Kindly review the attached confirmation and advise if any discrepancies.
+
+Here if you have any questions.
+
+Sincerely,
+Kabin247 Inflight Support
+One point of contact for your global inflight needs.`,
+      };
+
+      // Generate PDF filename
+      const pdfFilename = `Confirmation-${order.orderNumber || order.id}.pdf`;
+
+      // Send email with PDF attachment
+      await mail.send((message) => {
+        message
+          .to(order.user!.email)
+          .from(process.env.SMTP_EMAIL!, businessInfo.name || '')
+          .subject(emailMessage.subject)
+          .text(emailMessage.body)
+          .attachData(pdfBuffer, {
+            filename: pdfFilename,
+            contentType: 'application/pdf',
+          });
+      });
+
+      return response.ok({ success: true, message: 'Confirmation emailed to client.' });
+    } catch (error) {
+      errorHandler(error, response, logger, 'Email Confirmation Error');
+    }
+  }
+
   async notify({ logger, params, response, view }: HttpContext) {
     try {
-      const { id, target } = params as { id: number; target: 'client' | 'caterer' };
-      if (!['client', 'caterer'].includes(target)) {
+      const { id, target } = params as { id: number; target: 'client' | 'caterer' | 'vendor' };
+      if (!['client', 'caterer', 'vendor'].includes(target)) {
         return response.badRequest({ success: false, message: 'Invalid target' });
       }
 
@@ -1049,74 +1396,93 @@ export default class OrdersController {
         ? DateTime.fromISO(String(order.createdAt)).toFormat('yyyy-MM-dd')
         : '';
 
-      if (target === 'client') {
-        const { itemsForPrint, orderCharges } = await this.buildInvoiceData(order);
-        const html = await view.render('invoice', {
-          order,
-          itemsForPrint,
-          orderCharges,
-          formattedDate,
-          businessInfo,
-          baseUrl,
-        });
+      // Build invoice data for PDF generation
+      const { itemsForPrint, orderCharges } = await this.buildInvoiceData(order);
 
-        await mail.send((message) => {
-          message
-            .to(order.user?.email!)
-            .from(process.env.SMTP_EMAIL!, businessInfo.name || '')
-            .subject('Your Order Invoice')
-            .html(html);
-        });
-
-        return response.ok({ success: true, message: 'Invoice emailed to client.' });
-      }
-
-      const html = await view.render('emails/caterer_order_brief', {
+      // Generate PDF invoice
+      const pdfBuffer = await pdfService.generateInvoicePdf(view, {
         order,
+        itemsForPrint,
+        orderCharges,
+        formattedDate,
         businessInfo,
         baseUrl,
-        formattedDate,
-        items: (order.orderItems || []).map((it: any) => ({
-          name: it.name || it.menuItem?.name || 'Item',
-          qty: it.quantity || 0,
-          packaging: it.packaging || 'N/A',
-          variants: safeList(it.variants),
-          addons: safeList(it.addons),
-        })),
       });
 
-      const catererEmail = order.deliveryMan?.email;
-      if (!catererEmail || order.type !== 'delivery') {
-        return response.badRequest({
-          success: false,
-          message: 'Caterer email not found or order is not delivery type',
-        });
+      // Get email message for recipient type, status, and client name
+      // Pass revision number for caterer emails
+      const revision = target === 'caterer' ? (order.revision || 0) : undefined;
+      const emailMessage = emailMessagesService.getEmailMessage(
+        target,
+        order.orderNumber,
+        order.status,
+        order.user?.firstName || order.user?.fullName,
+        revision
+      );
+
+      // Determine recipient email based on target
+      let recipientEmail: string | undefined;
+      let successMessage: string;
+
+      if (target === 'client') {
+        recipientEmail = order.user?.email;
+        if (!recipientEmail) {
+          return response.badRequest({
+            success: false,
+            message: 'Client email not found',
+          });
+        }
+        successMessage = 'Invoice emailed to client.';
+      } else if (target === 'caterer') {
+        recipientEmail = order.deliveryMan?.email;
+        if (!recipientEmail || order.type !== 'delivery') {
+          return response.badRequest({
+            success: false,
+            message: 'Caterer email not found or order is not delivery type',
+          });
+        }
+        
+        // Increment revision when sending to caterer
+        const currentRevision = order.revision || 0;
+        const newRevision = currentRevision + 1;
+        await order.merge({ revision: newRevision }).save();
+        order.revision = newRevision;
+        
+        successMessage = 'Invoice emailed to caterer.';
+      } else if (target === 'vendor') {
+        // For vendor, you may need to add vendor email to order model
+        // For now, using a placeholder - adjust based on your data model
+        recipientEmail = order.deliveryMan?.email || order.user?.email;
+        if (!recipientEmail) {
+          return response.badRequest({
+            success: false,
+            message: 'Vendor email not found',
+          });
+        }
+        successMessage = 'Invoice emailed to vendor.';
+      } else {
+        return response.badRequest({ success: false, message: 'Invalid target' });
       }
 
+      // Generate PDF filename
+      const pdfFilename = `Invoice-${order.orderNumber || order.id}.pdf`;
+
+      // Send email with PDF attachment
       await mail.send((message) => {
         message
-          .to(catererEmail)
+          .to(recipientEmail!)
           .from(process.env.SMTP_EMAIL!, businessInfo.name || '')
-          .subject('New Catering Order Details')
-          .html(html);
+          .subject(emailMessage.subject)
+          .text(emailMessage.body)
+          .attachData(pdfBuffer, {
+            filename: pdfFilename,
+            contentType: 'application/pdf',
+          });
       });
 
-      return response.ok({ success: true, message: 'Order brief emailed to caterer.' });
+      return response.ok({ success: true, message: successMessage });
     } catch (error) {
       errorHandler(error, response, logger, 'Notify Order Error');
-    }
-
-    function safeList(v: any): string[] {
-      try {
-        const arr = typeof v === 'string' ? JSON.parse(v) : v;
-        if (!Array.isArray(arr)) return [];
-        const names: string[] = [];
-        arr.forEach((x: any) => {
-          if (Array.isArray(x?.option)) x.option.forEach((o: any) => o?.name && names.push(o.name));
-          if (x?.name) names.push(x.name);
-        });
-        return names;
-      } catch { return []; }
     }
   }
 
@@ -1253,7 +1619,9 @@ export default class OrdersController {
 
   private async fetchOrderWithRelations(orderId: number) {
     return Order.query()
-      .preload('user')
+      .preload('user', (query) => {
+        query.preload('airport');
+      })
       .preload('orderItems', (query) => {
         query.preload('menuItem');
       })

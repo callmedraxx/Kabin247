@@ -142,7 +142,9 @@ export const POSItemModal = ({
                 <Input
                   type="number"
                   step="0.01"
-                  value={item.quantity}
+                  value={item.quantity || ''}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => handleChange('quantity', parseFloat(e.target.value) || 0)}
                 />
               </Box>
@@ -151,7 +153,9 @@ export const POSItemModal = ({
                 <Input
                   type="number"
                   step="0.01"
-                  value={item.price}
+                  value={item.price || ''}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
                 />
               </Box>
@@ -172,7 +176,9 @@ export const POSItemModal = ({
                 <FormLabel>Discount</FormLabel>
                 <Input
                   type="number"
-                  value={item.discount}
+                  value={item.discount || ''}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => handleChange('discount', parseFloat(e.target.value) || 0)}
                 />
               </Box>
@@ -225,8 +231,9 @@ export const POSItemModal = ({
                 />
                 <Input
                   type="number"
-                  value={addon.price}
-                  placeholder="Price"
+                  value={addon.price || ''}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => updateAddon(index, 'price', parseFloat(e.target.value) || 0)}
                 />
                 <Input
@@ -291,8 +298,9 @@ export const POSItemModal = ({
                 />
                 <Input
                   type="number"
-                  placeholder="Price"
-                  value={variant.option?.[0]?.price || 0}
+                  placeholder="0"
+                  value={variant.option?.[0]?.price || ''}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
                     const newVariants = [...item.variants];
                     if (!newVariants[index].option || !newVariants[index].option[0]) {

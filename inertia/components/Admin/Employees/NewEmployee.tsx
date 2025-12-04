@@ -78,16 +78,54 @@ export default function NewEmployee({ refresh }: { refresh: () => void }) {
               roleId: 4,
             }}
             onSubmit={async (values, actions) => {
+              if (!values) return;
+              
               try {
                 actions.setSubmitting(true);
-                const { data } = await axios.post('/api/users', values);
+                const payload: any = {
+                  firstName: values?.firstName?.trim() || '',
+                  lastName: values?.lastName?.trim() || '',
+                  email: values?.email?.trim() || '',
+                  phoneNumber: values?.phoneNumber?.trim() || '',
+                  roleId: values?.roleId || 4,
+                  password: values?.password?.trim() || undefined,
+                  confirmPassword: values?.confirmPassword?.trim() || undefined,
+                  ...(values?.address && values.address.toString().trim() && !isNaN(Number(values.address)) 
+                    ? { address: Number(values.address) } 
+                    : {}),
+                };
+                const { data } = await axios.post('/api/users', payload);
                 if (data?.success) {
+                  actions.resetForm();
                   onClose();
                   refresh();
                   toast.success(t(data?.message) || t('Employee created successfully'));
+                } else {
+                  toast.error(t(data?.message) || t('Failed to create employee'));
                 }
-              } catch (e) {
-                toast.error(t(e.response.data.message) || t('Something went wrong'));
+              } catch (e: any) {
+                if (e?.response?.status === 422 && e?.response?.data?.messages) {
+                  const errorMessages: string[] = [];
+                  e.response.data.messages.forEach((message: { field: string; message: string }) => {
+                    const fieldName = message.field;
+                    actions.setFieldError(fieldName, t(message.message));
+                    errorMessages.push(`${t(fieldName)}: ${t(message.message)}`);
+                  });
+                  if (errorMessages.length > 0) {
+                    toast.error(t('Please fix the following errors:') + ' ' + errorMessages.join(', '));
+                  }
+                } else if (e?.response?.status === 422 && e?.response?.data?.errors) {
+                  const errors = e.response.data.errors;
+                  Object.keys(errors).forEach((field) => {
+                    const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                    actions.setFieldError(field, t(errorMsg));
+                  });
+                  toast.error(t('Please fix the validation errors'));
+                } else if (e?.response?.data?.message) {
+                  toast.error(t(e.response.data.message));
+                } else {
+                  toast.error(t('Something went wrong. Please check your input and try again.'));
+                }
               } finally {
                 actions.setSubmitting(false);
               }

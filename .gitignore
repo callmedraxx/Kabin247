@@ -9,6 +9,10 @@ tmp
 .env.production.local
 .env.development.local
 
+# DKIM Keys (private keys should never be committed)
+config/dkim/*.pem
+config/dkim/*.private
+
 # Frontend assets compiled code
 public/assets
 

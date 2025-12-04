@@ -28,7 +28,11 @@ router
     router.post('/calculate', [OrdersController, 'calculate']);
     router.put('/:id', [OrdersController, 'update']);
     router.patch('/bulk/update', [OrdersController, 'bulkCustomUpdate']);
+    router.delete('/bulk/delete', [OrdersController, 'bulkDelete']);
     router.delete('/:id', [OrdersController, 'delete']);
+    router.post('/:id/duplicate', [OrdersController, 'duplicate']);
+    router.post('/:id/email-estimate', [OrdersController, 'emailEstimate']);
+    router.post('/:id/email-confirmation', [OrdersController, 'emailConfirmation']);
     router.post('/:id/notify/:target', [OrdersController, 'notify']);
   })
   .prefix('/api/orders')

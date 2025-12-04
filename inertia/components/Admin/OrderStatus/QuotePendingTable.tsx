@@ -2,17 +2,15 @@ import axios from 'axios';
 import DataTable from '@/components/common/DataTable';
 import useTableData from '@/data/use_table_data';
 import { convertToCurrencyFormat } from '@/utils/currency_formatter';
-import { Badge, HStack, Select, Text, Input, Tooltip, IconButton } from '@chakra-ui/react';
+import { Badge, HStack, Select, Text, Input } from '@chakra-ui/react';
 import { SortingState } from '@tanstack/react-table';
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import DeleteOrder from './DeleteOrder';
 import UpdateOrderStatus from './UpdateOrderStatus';
-import OrderPreviewButton from './ViewPreviewButton';
 import { toast } from 'sonner';
 import UpdateDeliveryPerson from '../ActiveOrders/UpdateDeliveryPerson';
 import UpdateDeliveryAirport from '../ActiveOrders/UpdateDeliveryAirport';
-import { SmsTracking, People } from 'iconsax-react';
+import OrderActionsMenu from './OrderActionsMenu';
 
 export default function QuotePendingTable({
   setSelectedRow,
@@ -76,6 +74,15 @@ export default function QuotePendingTable({
       setSorting={setSorting}
       isLoading={isLoading}
       onRowSelection={setSelectedRow}
+      onRowClick={(row) => {
+        const rowElement = document.querySelector(`tr[data-row-id="${row.id}"]`);
+        if (rowElement) {
+          const actionButton = rowElement.querySelector('[aria-label*="actions"]') as HTMLElement;
+          if (actionButton) {
+            actionButton.click();
+          }
+        }
+      }}
       enableMultiRowSelection
       getRowId={(row) => row.id}
       pagination={{
@@ -129,37 +136,14 @@ export default function QuotePendingTable({
             };
 
             return (
-              <HStack gap={2}>
-                <OrderPreviewButton orderId={row.original.id} refresh={refresh} />
-                <DeleteOrder isIconButton id={row.original.id} refresh={refresh} />
-
-                {/* Email to caterer -> status: awaiting_vendor_confirmation */}
-                <Tooltip label={t('Send email to caterer')} placement="top">
-                  <IconButton
-                    aria-label="Email Caterer"
-                    icon={<People size="18" color="currentColor" />}
-                    size="md"
-                    colorScheme="purple"
-                    onClick={onEmailCaterer}
-                    isDisabled={sendingCaterer}
-                    isLoading={sendingCaterer}
-                  />
-                </Tooltip>
-                
-                {/* Email to client -> status: quote_sent */}
-                <Tooltip label={t('Send invoice to client')} placement="top">
-                  <IconButton
-                    aria-label="Email Client"
-                    icon={<SmsTracking size="18" color="currentColor" />}
-                    size="md"
-                    colorScheme="blue"
-                    onClick={onEmailClient}
-                    isDisabled={sendingClient}
-                    isLoading={sendingClient}
-                  />
-                </Tooltip>
-
-              </HStack>
+              <OrderActionsMenu
+                orderId={row.original.id}
+                refresh={refresh}
+                onEmailClient={onEmailClient}
+                onEmailCaterer={onEmailCaterer}
+                sendingClient={sendingClient}
+                sendingCaterer={sendingCaterer}
+              />
             );
           },
         },
@@ -274,9 +258,9 @@ export default function QuotePendingTable({
           cell: ({ row }) => (
             <Badge
               variant="subtle"
-              colorScheme={row.original.paymentType === 'cash' ? 'primary' : 'blue'}
+              colorScheme={row.original.paymentType === 'ach' ? 'primary' : 'blue'}
             >
-              {t((row.original.paymentType === 'stripe' || row.original.paymentType === 'card') ? 'card' : 'cash')}
+              {t((row.original.paymentType === 'stripe' || row.original.paymentType === 'card') ? 'card' : (row.original.paymentType === 'ach' ? 'ach' : row.original.paymentType || 'card'))}
             </Badge>
           ),
         },

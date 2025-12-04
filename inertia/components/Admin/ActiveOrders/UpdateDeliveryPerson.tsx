@@ -111,7 +111,7 @@ export default function UpdateDeliveryPerson({
         <PopoverTrigger>
           <div className="flex-1 font-normal text-left border py-2 px-3 rounded-[6px] border-secondary-200 bg-secondary-50 hover:bg-primary-50">
             <HStack>
-              <Icon as={status === 'client_confirmed' ? Truck : User} size="sm" />
+              <Icon as={status === 'client_confirmed' ? Truck : User} boxSize="16px" />
               <span>{deliveryPerson?.fullName}</span>
             </HStack>
           </div>
@@ -150,7 +150,7 @@ export default function UpdateDeliveryPerson({
               onClick={() => setEditing(true)}
               className="text-md font-normal flex items-center h-[28px]"
             >
-              <Icon as={User} size="sm" className='mr-2' />
+              <Icon as={User} boxSize="16px" className='mr-2' />
               {selectedPerson?.fullName || t('Click to select caterer')}
             </Box>
           </PopoverTrigger>

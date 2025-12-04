@@ -59,24 +59,50 @@ export default function NewAirport({ refresh }: { refresh: () => void }) {
             }}
             validationSchema={validationSchema}
             onSubmit={async (values, actions) => {
+              if (!values) return;
+              
               try {
                 actions.setSubmitting(true);
-                const payload = {
-                  name: values.name,
-                  fbo_name: values.fbo_name,
-                  fbo_email: values.fbo_email,
-                  fbo_phone: values.fbo_phone,
-                  iata_code: values.iata_code,
-                  icao_code: values.icao_code
+                const payload: any = {
+                  name: values?.name?.trim() || '',
+                  fbo_name: values?.fbo_name?.trim() || '',
+                  fbo_email: values?.fbo_email?.trim() || '',
+                  fbo_phone: values?.fbo_phone?.trim() || undefined,
+                  iata_code: values?.iata_code?.trim() || undefined,
+                  icao_code: values?.icao_code?.trim() || undefined,
                 };
                 const { data } = await axios.post('/api/airports', payload);
                 if (data?.id) {
+                  actions.resetForm();
                   onClose();
                   refresh();
-                  toast.success(t('Caterer created successfully'));
+                  toast.success(t('Airport created successfully'));
+                } else {
+                  toast.error(t(data?.message) || t('Failed to create airport'));
                 }
-              } catch (e) {
-                toast.error(t(e.response?.data?.message) || t('Something went wrong'));
+              } catch (e: any) {
+                if (e?.response?.status === 422 && e?.response?.data?.messages) {
+                  const errorMessages: string[] = [];
+                  e.response.data.messages.forEach((message: { field: string; message: string }) => {
+                    const fieldName = message.field;
+                    actions.setFieldError(fieldName, t(message.message));
+                    errorMessages.push(`${t(fieldName)}: ${t(message.message)}`);
+                  });
+                  if (errorMessages.length > 0) {
+                    toast.error(t('Please fix the following errors:') + ' ' + errorMessages.join(', '));
+                  }
+                } else if (e?.response?.status === 422 && e?.response?.data?.errors) {
+                  const errors = e.response.data.errors;
+                  Object.keys(errors).forEach((field) => {
+                    const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                    actions.setFieldError(field, t(errorMsg));
+                  });
+                  toast.error(t('Please fix the validation errors'));
+                } else if (e?.response?.data?.message) {
+                  toast.error(t(e.response.data.message));
+                } else {
+                  toast.error(t('Something went wrong. Please check your input and try again.'));
+                }
               } finally {
                 actions.setSubmitting(false);
               }

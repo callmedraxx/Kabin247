@@ -1,0 +1,207 @@
+2025-11-16 18:20:43 +00:00: [dotenv@17.2.3] injecting env (14) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+2025-11-16 18:20:43 +00:00: ✅ Connected to MySQL database
+2025-11-16 18:20:43 +00:00: 📊 Found 29 tables in database
+2025-11-16 18:20:43 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 18:20:43 +00:00: ✅ Created 29 models
+2025-11-16 18:20:43 +00:00: AdminJS: bundling user components...
+2025-11-16 18:20:43 +00:00: 
+2025-11-16 18:20:43 +00:00: 🎨 AdminJS is running!
+2025-11-16 18:20:43 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 18:20:43 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 18:20:43 +00:00: 
+2025-11-16 18:20:43 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 18:20:43 +00:00: 
+2025-11-16 18:22:24 +00:00: [dotenv@17.2.3] injecting env (14) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+2025-11-16 18:22:24 +00:00: ✅ Connected to MySQL database
+2025-11-16 18:22:24 +00:00: 📊 Found 29 tables in database
+2025-11-16 18:22:24 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 18:22:24 +00:00: ✅ Created 29 models
+2025-11-16 18:22:24 +00:00: AdminJS: bundling user components...
+2025-11-16 18:22:24 +00:00: 
+2025-11-16 18:22:24 +00:00: 🎨 AdminJS is running!
+2025-11-16 18:22:24 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 18:22:24 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 18:22:24 +00:00: 
+2025-11-16 18:22:24 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 18:22:24 +00:00: 
+2025-11-16 18:26:27 +00:00: [dotenv@17.2.3] injecting env (14) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+2025-11-16 18:26:27 +00:00: ✅ Connected to MySQL database
+2025-11-16 18:26:27 +00:00: 📊 Found 29 tables in database
+2025-11-16 18:26:27 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 18:26:28 +00:00: ✅ Created 29 models
+2025-11-16 18:26:28 +00:00: AdminJS: bundling user components...
+2025-11-16 18:26:28 +00:00: 
+2025-11-16 18:26:28 +00:00: 🎨 AdminJS is running!
+2025-11-16 18:26:28 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 18:26:28 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 18:26:28 +00:00: 
+2025-11-16 18:26:28 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 18:26:28 +00:00: 
+2025-11-16 18:27:07 +00:00: [dotenv@17.2.3] injecting env (14) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+2025-11-16 18:27:07 +00:00: ✅ Connected to MySQL database
+2025-11-16 18:27:07 +00:00: 📊 Found 29 tables in database
+2025-11-16 18:27:07 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 18:27:07 +00:00: ✅ Created 29 models
+2025-11-16 18:27:07 +00:00: AdminJS: bundling user components...
+2025-11-16 18:27:07 +00:00: AdminJS: bundling user components...
+2025-11-16 18:27:07 +00:00: 
+2025-11-16 18:27:07 +00:00: 🎨 AdminJS is running!
+2025-11-16 18:27:07 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 18:27:07 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 18:27:07 +00:00: 
+2025-11-16 18:27:07 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 18:27:07 +00:00: 
+2025-11-16 19:07:24 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+2025-11-16 19:07:24 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:07:24 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:07:24 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:07:24 +00:00: ✅ Created 29 models
+2025-11-16 19:07:24 +00:00: AdminJS: bundling user components...
+2025-11-16 19:07:24 +00:00: AdminJS: bundling user components...
+2025-11-16 19:07:24 +00:00: 
+2025-11-16 19:07:24 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:07:24 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:07:24 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:07:24 +00:00: 
+2025-11-16 19:07:24 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:07:24 +00:00: 
+2025-11-16 19:08:07 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+2025-11-16 19:08:07 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:08:07 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:08:07 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:08:07 +00:00: ✅ Created 29 models
+2025-11-16 19:08:07 +00:00: AdminJS: bundling user components...
+2025-11-16 19:08:08 +00:00: AdminJS: bundling user components...
+2025-11-16 19:08:08 +00:00: 
+2025-11-16 19:08:08 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:08:08 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:08:08 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:08:08 +00:00: 
+2025-11-16 19:08:08 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:08:08 +00:00: 
+2025-11-16 19:10:22 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: ⚙️  override existing env vars with { override: true }
+2025-11-16 19:10:22 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:10:22 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:10:22 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:10:23 +00:00: ✅ Created 29 models
+2025-11-16 19:10:23 +00:00: AdminJS: bundling user components...
+2025-11-16 19:10:23 +00:00: AdminJS: bundling user components...
+2025-11-16 19:10:23 +00:00: 
+2025-11-16 19:10:23 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:10:23 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:10:23 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:10:23 +00:00: 
+2025-11-16 19:10:23 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:10:23 +00:00: 
+2025-11-16 19:10:52 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+2025-11-16 19:10:52 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:10:52 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:10:52 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:10:52 +00:00: ✅ Created 29 models
+2025-11-16 19:10:52 +00:00: AdminJS: bundling user components...
+2025-11-16 19:10:52 +00:00: AdminJS: bundling user components...
+2025-11-16 19:10:52 +00:00: 
+2025-11-16 19:10:52 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:10:52 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:10:52 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:10:52 +00:00: 
+2025-11-16 19:10:52 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:10:52 +00:00: 
+2025-11-16 19:17:56 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+2025-11-16 19:17:56 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:17:56 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:17:56 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:17:56 +00:00: ✅ Created 29 models
+2025-11-16 19:17:56 +00:00: AdminJS: bundling user components...
+2025-11-16 19:17:56 +00:00: AdminJS: bundling user components...
+2025-11-16 19:17:56 +00:00: 
+2025-11-16 19:17:56 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:17:56 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:17:56 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:17:56 +00:00: 
+2025-11-16 19:17:56 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:17:56 +00:00: 
+2025-11-16 19:29:30 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+2025-11-16 19:29:30 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:29:30 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:29:30 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:29:30 +00:00: ✅ Created 29 models
+2025-11-16 19:29:30 +00:00: AdminJS: bundling user components...
+2025-11-16 19:29:30 +00:00: AdminJS: bundling user components...
+2025-11-16 19:29:30 +00:00: 
+2025-11-16 19:29:30 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:29:30 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:29:30 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:29:30 +00:00: 
+2025-11-16 19:29:30 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:29:30 +00:00: 
+2025-11-16 19:49:08 +00:00: [dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+2025-11-16 19:49:08 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:49:08 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:49:08 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:49:08 +00:00: ✅ Created 29 models
+2025-11-16 19:49:08 +00:00: AdminJS: bundling user components...
+2025-11-16 19:49:08 +00:00: AdminJS: bundling user components...
+2025-11-16 19:49:08 +00:00: 
+2025-11-16 19:49:08 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:49:08 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:49:08 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:49:08 +00:00: 
+2025-11-16 19:49:08 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:49:08 +00:00: 
+2025-11-16 19:52:37 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+2025-11-16 19:52:37 +00:00: ✅ Connected to MySQL database
+2025-11-16 19:52:37 +00:00: 📊 Found 29 tables in database
+2025-11-16 19:52:37 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-16 19:52:37 +00:00: ✅ Created 29 models
+2025-11-16 19:52:37 +00:00: AdminJS: bundling user components...
+2025-11-16 19:52:38 +00:00: AdminJS: bundling user components...
+2025-11-16 19:52:38 +00:00: 
+2025-11-16 19:52:38 +00:00: 🎨 AdminJS is running!
+2025-11-16 19:52:38 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-16 19:52:38 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-16 19:52:38 +00:00: 
+2025-11-16 19:52:38 +00:00: ✨ Modern web-based database admin ready!
+2025-11-16 19:52:38 +00:00: 
+2025-11-17 01:25:34 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+2025-11-17 01:25:34 +00:00: ✅ Connected to MySQL database
+2025-11-17 01:25:34 +00:00: 📊 Found 29 tables in database
+2025-11-17 01:25:34 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-17 01:25:34 +00:00: ✅ Created 29 models
+2025-11-17 01:25:34 +00:00: AdminJS: bundling user components...
+2025-11-17 01:25:34 +00:00: AdminJS: bundling user components...
+2025-11-17 01:25:34 +00:00: 
+2025-11-17 01:25:34 +00:00: 🎨 AdminJS is running!
+2025-11-17 01:25:34 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-17 01:25:34 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-17 01:25:34 +00:00: 
+2025-11-17 01:25:34 +00:00: ✨ Modern web-based database admin ready!
+2025-11-17 01:25:34 +00:00: 
+2025-11-17 01:42:09 +00:00: [dotenv@17.2.3] injecting env (19) from .env -- tip: ⚙️  override existing env vars with { override: true }
+2025-11-17 01:42:09 +00:00: ✅ Connected to MySQL database
+2025-11-17 01:42:09 +00:00: 📊 Found 29 tables in database
+2025-11-17 01:42:09 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-17 01:42:09 +00:00: ✅ Created 29 models
+2025-11-17 01:42:09 +00:00: AdminJS: bundling user components...
+2025-11-17 01:42:09 +00:00: AdminJS: bundling user components...
+2025-11-17 01:42:09 +00:00: 
+2025-11-17 01:42:09 +00:00: 🎨 AdminJS is running!
+2025-11-17 01:42:09 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-17 01:42:09 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-17 01:42:09 +00:00: 
+2025-11-17 01:42:09 +00:00: ✨ Modern web-based database admin ready!
+2025-11-17 01:42:09 +00:00: 
+2025-11-21 11:10:08 +00:00: [dotenv@17.2.3] injecting env (23) from .env -- tip: ⚙️  override existing env vars with { override: true }
+2025-11-21 11:10:08 +00:00: ✅ Connected to MySQL database
+2025-11-21 11:10:08 +00:00: 📊 Found 29 tables in database
+2025-11-21 11:10:08 +00:00:    Tables: addons, adonis_schema, adonis_schema_versions, airports, business_setups, categories, caterers, charges, coupons, item_addons, item_charges, item_variants, menu_items, notifications, order_charges, order_items, orders, payment_methods, promotions, remember_me_tokens, reservations, roles, schedules, settings, tokens, translations, users, variant_options, variants
+2025-11-21 11:10:08 +00:00: ✅ Created 29 models
+2025-11-21 11:10:08 +00:00: AdminJS: bundling user components...
+2025-11-21 11:10:08 +00:00: AdminJS: bundling user components...
+2025-11-21 11:10:08 +00:00: 
+2025-11-21 11:10:08 +00:00: 🎨 AdminJS is running!
+2025-11-21 11:10:08 +00:00: 🌐 Access at: http://localhost:3001/admin
+2025-11-21 11:10:08 +00:00: 📊 Database: app@127.0.0.1:3306
+2025-11-21 11:10:08 +00:00: 
+2025-11-21 11:10:08 +00:00: ✨ Modern web-based database admin ready!
+2025-11-21 11:10:08 +00:00: 

@@ -20,7 +20,7 @@ export default class Addon extends compose(BaseModel, Filterable) {
 
   @attachment({
     preComputeUrl: true,
-    variants: ['thumbnail', 'orginal'],
+    variants: ['thumbnail'],
   })
   declare image: Attachment | null;
 

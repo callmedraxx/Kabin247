@@ -33,7 +33,7 @@ export class OrderStatus {
         orderType: null,
       },
       awaiting_vendor_quote: {
-        label: 'Awaiting Vendor Quote',
+        label: 'Awaiting Vendor Q.',
         value: 'awaiting_vendor_quote',
         scheme: 'blue',
         fgColor: 'var(--color-blue-500)',
@@ -43,7 +43,7 @@ export class OrderStatus {
         orderType: null,
       },
       awaiting_vendor_confirmation: {
-        label: 'Awaiting Vendor Confirmation',
+        label: 'Awaiting Vendor C.',
         value: 'awaiting_vendor_confirmation',
         scheme: 'blue',
         fgColor: 'var(--color-blue-500)',
@@ -63,7 +63,7 @@ export class OrderStatus {
         orderType: null,
       },
       awaiting_client_confirmation: {
-        label: 'Awaiting Client Confirmation',
+        label: 'Awaiting Client C.',
         value: 'awaiting_client_confirmation',
         scheme: 'blue',
         fgColor: 'var(--color-blue-500)',
@@ -100,6 +100,16 @@ export class OrderStatus {
         bgColor: 'var(--color-green-100)',
         next: 'client_confirmed',
         prev: null,
+        orderType: null,
+      },
+      delivered_comped: {
+        label: 'Delivered/Comped',
+        value: 'delivered_comped',
+        scheme: 'green',
+        fgColor: 'var(--color-green-500)',
+        bgColor: 'var(--color-green-100)',
+        next: null,
+        prev: 'completed',
         orderType: null,
       },
       cancelled_not_billable: {

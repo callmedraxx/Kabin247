@@ -1,9 +1,6 @@
 import CustomerBulkUpdateBar from '@/components/Admin/Customers/CustomerBulkUpdateBar';
 import FilterCustomer from '@/components/Admin/Customers/FilterCustomer';
-import DeleteEmployee from '@/components/Admin/Employees/DeleteEmployee';
-import EditEmployee from '@/components/Admin/Employees/EditEmployee';
 import NewEmployee from '@/components/Admin/Employees/NewEmployee';
-import ViewEmployee from '@/components/Admin/Employees/ViewEmployee';
 import ToolBar from '@/components/Admin/ToolBar';
 import DataTable from '@/components/common/DataTable';
 import Layout from '@/components/common/Layout';
@@ -21,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
+import EmployeeActionsMenu from '@/components/Admin/Employees/EmployeeActionsMenu';
 
 // filter options types
 type FilterOptions = Partial<{
@@ -221,12 +219,9 @@ export default function Employees() {
             {
               accessorKey: 'actions',
               header: () => t('Actions'),
+              enableSorting: false,
               cell: ({ row }) => (
-                <div className="flex gap-2">
-                  <ViewEmployee employee={row.original} refresh={refresh} />
-                  <DeleteEmployee isIconButton id={row.original.id} refresh={refresh} />
-                  <EditEmployee isIconButton employee={row.original} refresh={refresh} />
-                </div>
+                <EmployeeActionsMenu employee={row.original} refresh={refresh} />
               ),
             },
           ]}

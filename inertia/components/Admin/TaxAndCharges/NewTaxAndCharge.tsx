@@ -92,16 +92,49 @@ export default function NewTaxAndCharge({ refresh }: { refresh: () => void }) {
               isAvailable: true,
             }}
             onSubmit={async (values, actions) => {
+              if (!values) return;
+              
               try {
                 actions.setSubmitting(true);
-                const { data } = await axios.post('/api/charges', values);
+                const payload: any = {
+                  name: values?.name?.trim() || '',
+                  type: values?.type || '',
+                  amount: values?.amount ? Number(values.amount) : undefined,
+                  amountType: values?.amountType || '',
+                  isAvailable: values?.isAvailable ?? true,
+                };
+                const { data } = await axios.post('/api/charges', payload);
                 if (data?.success) {
+                  actions.resetForm();
                   onClose();
                   refresh();
-                  toast.success(data.message);
+                  toast.success(data.message || t('Tax/charge created successfully'));
+                } else {
+                  toast.error(t(data?.message) || t('Failed to create tax/charge'));
                 }
-              } catch (e) {
-                toast.error(t(e.response.data.message) || t('Something went wrong'));
+              } catch (e: any) {
+                if (e?.response?.status === 422 && e?.response?.data?.messages) {
+                  const errorMessages: string[] = [];
+                  e.response.data.messages.forEach((message: { field: string; message: string }) => {
+                    const fieldName = message.field;
+                    actions.setFieldError(fieldName, t(message.message));
+                    errorMessages.push(`${t(fieldName)}: ${t(message.message)}`);
+                  });
+                  if (errorMessages.length > 0) {
+                    toast.error(t('Please fix the following errors:') + ' ' + errorMessages.join(', '));
+                  }
+                } else if (e?.response?.status === 422 && e?.response?.data?.errors) {
+                  const errors = e.response.data.errors;
+                  Object.keys(errors).forEach((field) => {
+                    const errorMsg = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+                    actions.setFieldError(field, t(errorMsg));
+                  });
+                  toast.error(t('Please fix the validation errors'));
+                } else if (e?.response?.data?.message) {
+                  toast.error(t(e.response.data.message));
+                } else {
+                  toast.error(t('Something went wrong. Please check your input and try again.'));
+                }
               } finally {
                 actions.setSubmitting(false);
               }

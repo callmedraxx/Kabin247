@@ -151,13 +151,13 @@ export default function Checkout() {
                 formattedData
               );
 
-              if (orderResponseData?.success && formattedData?.paymentType === 'cash') {
-                // reset and cart redirect to success page
+              if (orderResponseData?.success && formattedData?.paymentType === 'ach') {
+                // reset and cart redirect to success page for ACH
                 resetCartState();
                 router.visit('/confirm');
               }
-              if (orderResponseData?.success && formattedData?.paymentType !== 'cash') {
-                // reset and redirect to payment gateway
+              if (orderResponseData?.success && formattedData?.paymentType !== 'ach') {
+                // reset and redirect to payment gateway for card/paypal/stripe
                 resetCartState();
                 window.location.href = orderResponseData?.redirectUrl;
               }
@@ -241,14 +241,14 @@ export default function Checkout() {
                             <Button
                               variant="outline"
                               colorScheme="outline"
-                              data-selected={field.value === 'cash'}
+                              data-selected={field.value === 'ach'}
                               className={`h-12 uppercase border rounded-full px-8 data-[selected=true]:border-primary-400 data-[selected=true]:text-primary-400 border-secondary-200 hover:border-primary-400 hover:text-primary-400`}
                               onClick={() => {
-                                form.setFieldValue('paymentMethod', 'cash');
-                                cart.changePaymentType('cash');
+                                form.setFieldValue('paymentMethod', 'ach');
+                                cart.changePaymentType('ach');
                               }}
                             >
-                              Cash
+                              ACH
                             </Button>
 
                             {paymentMethods?.content?.map((item: Record<string, any>) => (

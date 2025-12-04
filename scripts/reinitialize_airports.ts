@@ -1,5 +1,5 @@
-import app from '@adonisjs/core/services/app';
 import { Ignitor } from '@adonisjs/core';
+import type { ApplicationService } from '@adonisjs/core/types';
 
 const APP_ROOT = new URL('../', import.meta.url);
 
@@ -10,24 +10,24 @@ const IMPORTER = (filePath: string) => {
   return import(filePath);
 };
 
-new Ignitor(APP_ROOT, { importer: IMPORTER })
-  .tap((app) => {
-    app.booting(async () => {
-      await import('#start/env');
-    });
-  })
-  .app()
-  .then(async (app) => {
-    await app.boot();
-    const { default: DataInitializationService } = await import('#services/data_initialization_service');
-    console.log('Starting airport re-initialization...');
-    await DataInitializationService.initializeAirports(true);
-    console.log('Airport re-initialization complete!');
-    await app.terminate();
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('Error:', error);
-    process.exit(1);
+const ignitor = new Ignitor(APP_ROOT, { importer: IMPORTER });
+
+ignitor.tap((ignitorInstance) => {
+  ignitorInstance.booting(async () => {
+    await import('#start/env');
   });
+});
+
+(ignitor as any).app().then(async (appInstance: ApplicationService) => {
+  await appInstance.boot();
+  const { default: DataInitializationService } = await import('#services/data_initialization_service');
+  console.log('Starting airport re-initialization...');
+  await DataInitializationService.initializeAirports(true);
+  console.log('Airport re-initialization complete!');
+  await appInstance.terminate();
+  process.exit(0);
+}).catch((error: unknown) => {
+  console.error('Error:', error);
+  process.exit(1);
+});
 

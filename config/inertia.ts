@@ -12,7 +12,7 @@ const inertiaConfig = defineConfig({
    */
   sharedData: {
     auth: async (ctx) => {
-      if (ctx.auth.user) {
+      if (ctx.auth && ctx.auth.user) {
         await ctx.auth.user.load('role');
         await ctx.auth.user.load('airport');
         return ctx.auth.user.serialize();

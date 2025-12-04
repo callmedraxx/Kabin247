@@ -109,7 +109,7 @@ export default function UpdateDeliveryAirport({
         <PopoverTrigger>
           <div className="flex-1 font-normal text-left border py-2 px-3 rounded-[6px] border-secondary-200 bg-secondary-50 hover:bg-primary-50">
             <HStack>
-              <Icon as={Location} size="sm" />
+              <Icon as={Location} boxSize="16px" />
               <span>{airport?.fboName}</span>
             </HStack>
           </div>
@@ -146,7 +146,7 @@ export default function UpdateDeliveryAirport({
               onClick={() => setEditing(true)}
               className="text-md font-normal flex items-center h-[28px]"
             >
-              <Icon as={Location} size="sm" className="mr-2" />
+              <Icon as={Location} boxSize="16px" className="mr-2" />
               {selectedAirport?.fboName || airport?.fboName || t('Click to select delivery airport')}
             </Box>
           </PopoverTrigger>

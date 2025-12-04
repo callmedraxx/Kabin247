@@ -38,8 +38,8 @@ class Paypal {
   async createPaypalOrder(order: Order) {
     try {
       const branding = await useBranding();
-      if (!branding?.siteUrl) {
-        throw new Error('Base URL configuration error');
+      if (!branding?.siteUrl || !branding.business) {
+        throw new Error('Base URL or business configuration error');
       }
       const accessToken = await this.generateAccessToken();
       const response = await axios({
@@ -55,7 +55,7 @@ class Paypal {
             {
               reference_id: order.orderNumber,
               amount: {
-                currency_code: branding.business.currencyCode?.toUpperCase(),
+                currency_code: branding.business.currencyCode?.toUpperCase() || 'USD',
                 value: formatPrecision(order.grandTotal),
               },
             },
@@ -65,7 +65,7 @@ class Paypal {
             cancel_url: branding.siteUrl + `/payments/paypal/cancel`,
             shipping_preference: 'NO_SHIPPING',
             user_action: 'PAY_NOW',
-            brand_name: branding.business?.name || '',
+            brand_name: branding.business.name || '',
           },
         }),
       });

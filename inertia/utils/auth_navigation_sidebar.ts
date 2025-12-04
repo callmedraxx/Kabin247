@@ -18,6 +18,7 @@ import {
   SmsStar,
   Task,
   UserOctagon,
+  BoxTick,
 } from 'iconsax-react';
 import { ROLE } from './platform_roles';
 
@@ -137,6 +138,15 @@ export const AUTH_SIDEBAR: {
           href: '/tax-and-charges',
           leftIcon: ReceiptDisscount,
           isActive: (currentPath: string) => currentPath === 'tax-and-charges',
+          role: [ROLE.ADMIN, ROLE.MANAGER],
+        },
+        {
+          id: 'f8a3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c',
+          key: 'stock-inventory',
+          title: 'Stock and Inventory',
+          href: '/stock-inventory',
+          leftIcon: BoxTick,
+          isActive: (currentPath: string) => currentPath === 'stock-inventory',
           role: [ROLE.ADMIN, ROLE.MANAGER],
         },
       ],

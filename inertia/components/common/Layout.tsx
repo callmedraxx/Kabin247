@@ -2,7 +2,9 @@ import { PageProps, User } from '../../types';
 import {
   Container,
   Drawer,
-  Portal,
+  DrawerBody,
+  DrawerContent,
+  DrawerOverlay,
   Spinner,
 } from '@chakra-ui/react';
 import { Head, usePage } from '@inertiajs/react';
@@ -23,8 +25,16 @@ export default function Layout({
   enableDrawerSidebar?: boolean;
 }) {
   const windowSize = useWindowSize();
-  const [isWindowLoading, setIsWindowLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState<boolean>(windowSize.width > 768);
+  // Initialize loading state - false if window is available (client-side), true for SSR
+  const [isWindowLoading, setIsWindowLoading] = useState(() => typeof window === 'undefined');
+  const [isExpanded, setIsExpanded] = useState<boolean>(() => {
+    // Initialize based on actual window size if available
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 768;
+    }
+    // SSR fallback - assume desktop
+    return true;
+  });
 
   const btnRef = React.useRef<HTMLButtonElement | null>(null);
   const { mutate } = useSWRConfig();
@@ -36,6 +46,12 @@ export default function Layout({
 
   // Set default sidebar and window loading
   useEffect(() => {
+    // Only access localStorage on client side
+    if (typeof window === 'undefined') {
+      setIsWindowLoading(false);
+      return;
+    }
+    
     const sidebarPref = localStorage.getItem('sidebar');
 
     if (windowSize.width < 768) {
@@ -47,29 +63,39 @@ export default function Layout({
       setIsExpanded(true); // Default to expanded on desktop
     }
 
+    // Set loading to false immediately since window size is already detected
     setIsWindowLoading(false);
   }, [windowSize.width]);
 
   useEffect(() => {
-    const subscribeToNotifications = async () => {
-      const subscription = transmit.subscription(`users/${auth?.id}`);
-      await subscription.create();
+    // Only subscribe if transmit is available and auth exists
+    if (typeof window === 'undefined' || !globalThis.transmit || !auth?.id) return;
 
-      subscription.onMessage((data: Record<string, string>) => {
-        toast.message(data.title, {
-          description: data.body,
-          closeButton: true,
+    const subscribeToNotifications = async () => {
+      try {
+        const subscription = transmit.subscription(`users/${auth?.id}`);
+        await subscription.create();
+
+        subscription.onMessage((data: Record<string, string>) => {
+          toast.message(data.title, {
+            description: data.body,
+            closeButton: true,
+          });
+          mutate((key: string) => key.startsWith('/notifications'));
         });
-        mutate((key: string) => key.startsWith('/notifications'));
-      });
+      } catch (error) {
+        console.error('Failed to subscribe to notifications:', error);
+      }
     };
 
     subscribeToNotifications();
 
     return () => {
-      transmit.close();
+      if (globalThis.transmit) {
+        transmit.close();
+      }
     };
-  }, [mutate]);
+  }, [mutate, auth?.id]);
 
   // Toggle or update sidebar state
   const toggleSidebar = (state?: 'expanded' | 'collapsed') => {
@@ -97,18 +123,14 @@ export default function Layout({
       <Container maxW="100%" paddingX="0">
         <div className="h-screen flex">
           {windowSize.width < 768 || enableDrawerSidebar ? (
-            <Drawer.Root open={isExpanded} onOpenChange={() => toggleSidebar('collapsed')} placement="start">
-              <Portal>
-                <Drawer.Backdrop />
-                <Drawer.Positioner>
-                  <Drawer.Content style={{ width: '15rem', maxWidth: '15rem' }}>
-                    <Drawer.Body className="overflow-hidden p-0 w-60">
-                      {auth?.roleId !== 4 && auth?.roleId !== 5 && <SideNav isExpanded={true} />}
-                    </Drawer.Body>
-                  </Drawer.Content>
-                </Drawer.Positioner>
-              </Portal>
-            </Drawer.Root>
+            <Drawer isOpen={isExpanded} onClose={() => toggleSidebar('collapsed')} placement="left">
+              <DrawerOverlay />
+              <DrawerContent style={{ width: '15rem', maxWidth: '15rem' }}>
+                <DrawerBody className="overflow-hidden p-0 w-60">
+                  {auth?.roleId !== 4 && auth?.roleId !== 5 && <SideNav isExpanded={true} />}
+                </DrawerBody>
+              </DrawerContent>
+            </Drawer>
           ) : (
             auth?.roleId !== 4 && auth?.roleId !== 5 && <SideNav isExpanded={isExpanded} />
           )}

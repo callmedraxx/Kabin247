@@ -3,21 +3,21 @@ import Setting from '#models/setting';
 import env from '#start/env';
 
 const useBranding = async () => {
-  const business = await BusinessSetup.query().firstOrFail();
+  const business = await BusinessSetup.query().first().catch(() => null);
   const branding = await Setting.query()
     .where({
       key: 'branding',
     })
-    ?.firstOrFail();
+    ?.first().catch(() => null);
 
   const theme = await Setting.query()
     .where({
       key: 'theme',
     })
-    ?.firstOrFail();
+    ?.first().catch(() => null);
 
-  // Fallback to server URL from environment if siteUrl is not set or invalid
-  let siteUrl = branding?.value1;
+  // Priority: SERVER_URL from env > branding settings > constructed from HOST/PORT
+  let siteUrl = env.get('SERVER_URL') || branding?.value1;
   if (!siteUrl) {
     const host = env.get('HOST');
     const port = env.get('PORT');
@@ -35,10 +35,10 @@ const useBranding = async () => {
   }
 
   return {
-    business,
+    business: business || null,
     siteUrl,
-    langs: branding?.value5,
-    theme: theme.value6 ? JSON.parse(theme.value6) : null,
+    langs: branding?.value5 || null,
+    theme: theme?.value6 ? JSON.parse(theme.value6) : null,
   };
 };
 

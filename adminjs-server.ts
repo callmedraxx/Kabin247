@@ -8,7 +8,7 @@ import AdminJS from 'adminjs'
 import AdminJSExpress from '@adminjs/express'
 import AdminJSSequelize from '@adminjs/sequelize'
 import express from 'express'
-import { Sequelize, DataTypes } from 'sequelize'
+import { Sequelize, DataTypes, QueryTypes } from 'sequelize'
 import { config } from 'dotenv'
 
 // Load environment variables
@@ -22,7 +22,7 @@ AdminJS.registerAdapter({
 
 // Read database config from .env
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '127.0.0.1',
   port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
@@ -54,7 +54,7 @@ const startAdminJS = async () => {
   const tablesResult: any = await sequelize.query(
     `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${dbConfig.database}' AND TABLE_TYPE = 'BASE TABLE'`,
     {
-      type: sequelize.QueryTypes.SELECT,
+      type: QueryTypes.SELECT,
     }
   )
 
@@ -92,7 +92,7 @@ const startAdminJS = async () => {
        WHERE TABLE_SCHEMA = '${dbConfig.database}' AND TABLE_NAME = '${tableName}'
        ORDER BY ORDINAL_POSITION`,
       {
-        type: sequelize.QueryTypes.SELECT,
+        type: QueryTypes.SELECT,
       }
     )
 
@@ -191,8 +191,7 @@ const startAdminJS = async () => {
     branding: {
       companyName: 'Kabin247 Database Admin',
       logo: false,
-      softwareBrothers: false,
-      favicon: false,
+      favicon: '',
     },
     locale: {
       language: 'en',
@@ -204,23 +203,42 @@ const startAdminJS = async () => {
     },
   })
 
+  // Initialize AdminJS and wait for assets to be ready
+  await adminJs.initialize()
+
   // Build router (no authentication for local development)
   const router = AdminJSExpress.buildRouter(adminJs)
 
   // Create Express app
   const app = express()
 
+  // Redirect root path to /admin
+  app.get('/', (_req, res) => {
+    res.redirect('/admin')
+  })
+
   // Use AdminJS router
   app.use(adminJs.options.rootPath, router)
 
   // Health check endpoint
-  app.get('/health', async (req, res) => {
+  app.get('/health', async (_req, res) => {
     try {
       await sequelize.authenticate()
       res.json({ status: 'ok', database: 'connected' })
     } catch (error: any) {
       res.status(500).json({ status: 'error', error: error.message })
     }
+  })
+
+  // Error handling middleware
+  app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err) {
+      console.error('AdminJS Error:', err.message)
+      if (!res.headersSent) {
+        res.status(err.status || 500).json({ error: err.message || 'Internal server error' })
+      }
+    }
+    next()
   })
 
   // Start server

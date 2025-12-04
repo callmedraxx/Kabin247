@@ -87,8 +87,7 @@ export default class AuthController {
       const token = await Token.generateVerifyEmailToken(user);
       const branding = await useBranding();
       
-      // Try to send verification email, but don't fail registration if SMTP fails
-      let emailError = null;
+      // Send verification email and wait for result to return proper success/error
       try {
         await mail.send(
           new VerifyEmailNotification(user, token, {
@@ -96,32 +95,59 @@ export default class AuthController {
             siteUrl: branding.siteUrl || '',
           })
         );
+
+        return response.json({
+          success: true,
+          message: 'Registration was successful. Verification email has been sent to your email address. Please check your inbox to verify your account.',
+          user,
+        });
       } catch (mailError: any) {
-        emailError = {
+        const detailedError = {
           code: mailError.code || 'MAIL_ERROR',
           message: mailError.message || 'Failed to send verification email',
           response: mailError.response || mailError.responseCode || null,
           command: mailError.command || null,
           details: mailError.response || mailError.message || 'Unknown error',
+          stack: process.env.NODE_ENV === 'development' ? mailError.stack : undefined,
         };
+
+        // Log detailed error information
         logger.error('Failed to send verification email during registration:', {
-          code: emailError.code,
-          message: emailError.message,
-          response: emailError.response,
-          command: emailError.command,
+          code: detailedError.code,
+          message: detailedError.message,
+          response: detailedError.response,
+          command: detailedError.command,
+          details: detailedError.details,
           fullError: mailError,
         });
-        // Continue with registration even if email fails
-      }
 
-      return response.json({
-        success: true,
-        message: emailError
-          ? 'Registration was successful, but we could not send the verification email. Please use the resend verification feature to receive your verification link.'
-          : 'Registration was successful. We sent a verification link to your email. Please check your email to verify your account.',
-        user,
-        emailError: emailError, // Include error details for debugging
-      });
+        // Build user-friendly error message
+        let userMessage = 'Registration was successful, but we were unable to send the verification email. ';
+        if (detailedError.code === 'EAUTH') {
+          userMessage += 'SMTP authentication failed. ';
+          if (detailedError.response && detailedError.response.includes('SmtpClientAuthentication is disabled')) {
+            userMessage += 'SMTP authentication is disabled for your email provider. Please contact your administrator or use the resend verification feature.';
+          } else {
+            userMessage += 'Please contact support or use the resend verification feature.';
+          }
+        } else if (detailedError.code === 'ETIMEDOUT' || detailedError.code === 'ECONNREFUSED') {
+          userMessage += 'Email server connection failed. Please try using the resend verification feature, or contact support if the problem persists.';
+        } else {
+          userMessage += detailedError.details || 'Please use the resend verification feature, or contact support if the problem persists.';
+        }
+
+        // Return success for registration but include email error info
+        return response.json({
+          success: true,
+          message: userMessage,
+          user,
+          emailSent: false,
+          emailError: {
+            code: detailedError.code,
+            message: detailedError.message,
+          },
+        });
+      }
     } catch (error) {
       errorHandler(error, response, logger, 'Registration Error');
     }
@@ -315,7 +341,8 @@ export default class AuthController {
         }
         const newToken = await Token.generateVerifyEmailToken(user);
         
-        // Try to send verification email, but don't fail login if SMTP fails
+        // Send verification email and return proper status
+        let emailSent = false;
         let emailError = null;
         try {
           await mail.send(
@@ -324,30 +351,43 @@ export default class AuthController {
               siteUrl: branding.siteUrl || '',
             })
           );
+          emailSent = true;
         } catch (mailError: any) {
-          emailError = {
+          const detailedError = {
             code: mailError.code || 'MAIL_ERROR',
             message: mailError.message || 'Failed to send verification email',
             response: mailError.response || mailError.responseCode || null,
             command: mailError.command || null,
             details: mailError.response || mailError.message || 'Unknown error',
           };
+
+          emailError = {
+            code: detailedError.code,
+            message: detailedError.message,
+          };
+
+          // Log detailed error information
           logger.error('Failed to send verification email during login:', {
-            code: emailError.code,
-            message: emailError.message,
-            response: emailError.response,
-            command: emailError.command,
+            code: detailedError.code,
+            message: detailedError.message,
+            response: detailedError.response,
+            command: detailedError.command,
+            details: detailedError.details,
             fullError: mailError,
           });
         }
         
+        // Return login response with email status
+        const message = emailSent
+          ? 'We sent a verification link to your email. Please check your email to verify your account.'
+          : 'We were unable to send the verification email. Please use the resend verification feature to receive a new verification link.';
+        
         return response.json({
           login: false,
           requiredVerification: true,
-          message: emailError
-            ? 'We could not send the verification email. Please use the resend verification link below to receive your verification email.'
-            : 'We sent a verification link to your email. Please check your email to verify your account. If you did not receive it, you can request a new verification link.',
-          emailError: emailError, // Include error details for debugging
+          message,
+          emailSent,
+          emailError,
         });
       }
 

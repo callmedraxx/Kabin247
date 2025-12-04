@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import {
   Box, Button, HStack, IconButton, Input, Select, Table, Thead, Tbody, Tr, Th, Td, Text,
   Spinner, Portal, Popover, PopoverTrigger, PopoverContent, PopoverHeader,
-  PopoverBody, PopoverArrow, PopoverCloseButton, Checkbox, Stack
+  PopoverBody, PopoverArrow, PopoverCloseButton, Checkbox, Stack, Textarea, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, FormControl, FormLabel
 } from "@chakra-ui/react";
 import { Add, Trash } from "iconsax-react";
+import axios from "axios";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { POSItem, Charge } from "@/types/pos_type";
 
 type SuggestedItem = {
@@ -37,24 +40,21 @@ function variantOptionsPerUnit(item: POSItem) {
 }
 function compute(item: POSItem) {
   const perUnit = n(item.price) + variantOptionsPerUnit(item);
-  const base = perUnit * n(item.quantity);
-
-  const disc = item.discountType === "percentage"
-    ? (base * n(item.discount)) / 100
-    : n(item.discount);
-
-  const subTotal = Math.max(0, base - disc);
+  const portionServings = n(item.quantity);
+  
+  // Total = price × portion servings
+  const baseTotal = perUnit * portionServings;
 
   const perItemCharges = (item.charges ?? []).reduce((s, c) =>
-    s + (c.amountType === "percentage" ? (n(c.amount) / 100) * subTotal : n(c.amount) * n(item.quantity)), 0
+    s + (c.amountType === "percentage" ? (n(c.amount) / 100) * baseTotal : n(c.amount) * portionServings), 0
   );
 
   const addonsTotal = (item.addons ?? []).reduce((s: number, a: any) =>
     s + n(a.price) * n(a.quantity ?? 1), 0
   );
 
-  const total = Math.max(0, subTotal + perItemCharges + addonsTotal);
-  return { subTotal, total };
+  const total = Math.max(0, baseTotal + perItemCharges + addonsTotal);
+  return { subTotal: baseTotal, total };
 }
 
 export default function POSItemsTable({ items, onChange, searchItems }: Props) {
@@ -75,7 +75,6 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
         id: Date.now(),
         name: "", description: "",
         price: 0, image: {},
-        discount: 0, discountType: "amount",
         variants: [], addons: [],
         quantity: 1, subTotal: 0, total: 0,
         charges: [] as Charge[],
@@ -85,7 +84,7 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
     ]);
 
   return (
-    <Box border="1px solid" borderColor="blackAlpha.200" rounded="md" overflow="scroll">
+    <Box border="1px solid" borderColor="blackAlpha.200" rounded="md" overflowX="auto" overflowY="visible" style={{ overscrollBehavior: 'contain' }}>
       <Box px={3} py={2} borderBottom="1px solid" borderColor="blackAlpha.200">
         <Text fontSize="sm" fontWeight="medium">Items</Text>
       </Box>
@@ -95,12 +94,11 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
           <Tr>
             <Th minW="30px">#</Th>
             <Th minW="160px">Item</Th>
+            <Th minW="200px">Description</Th>
             <Th minW="160px">Variants</Th>
             <Th minW="160px">Addons</Th>
+            <Th minW="100px">Portion Servings</Th>
             <Th minW="120px">Price</Th>
-            <Th minW="100px">Qty</Th>
-            <Th minW="210px">Discount</Th>
-            <Th minW="120px">Sub-total</Th>
             <Th minW="120px">Total</Th>
             <Th minW="80px">Action</Th>
           </Tr>
@@ -145,6 +143,16 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
               </Td>
 
               <Td>
+                <Input
+                  size="sm"
+                  value={r.description ?? ""}
+                  onChange={(e) => patch(r.id, { description: e.target.value })}
+                  placeholder="Item description (editable for this order)"
+                  bg="white"
+                />
+              </Td>
+
+              <Td>
                 <VariantsCell
                   variantDefs={r.__variantDefs ?? []}
                   selected={r.variants ?? []}
@@ -167,8 +175,23 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
               <Td>
                 <Input
                   size="sm" type="number"
-                  value={r.price}
-                  onChange={(e) => patch(r.id, { price: n(e.target.value) })}
+                  value={r.quantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // If value is "0" followed by digits (not decimals), remove leading zeros
+                    // This handles cases like "010" -> "10", but allows "0.5" to stay
+                    if (val.length > 1 && val.startsWith('0') && !val.includes('.')) {
+                      const cleaned = val.replace(/^0+/, '') || '0';
+                      patch(r.id, { quantity: Math.max(0, n(cleaned)) });
+                    } else {
+                      patch(r.id, { quantity: Math.max(0, n(val)) });
+                    }
+                  }}
+                  onFocus={(e) => {
+                    // Select all text when focused, so typing replaces the value
+                    e.target.select();
+                  }}
+                  placeholder="Portion servings"
                   bg="white"
                 />
               </Td>
@@ -176,32 +199,27 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
               <Td>
                 <Input
                   size="sm" type="number"
-                  value={r.quantity}
-                  onChange={(e) => patch(r.id, { quantity: Math.max(0, n(e.target.value)) })}
+                  value={r.price}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // If value is "0" followed by digits (not decimals), remove leading zeros
+                    // This handles cases like "010" -> "10", but allows "0.5" to stay
+                    if (val.length > 1 && val.startsWith('0') && !val.includes('.')) {
+                      const cleaned = val.replace(/^0+/, '') || '0';
+                      patch(r.id, { price: n(cleaned) });
+                    } else {
+                      patch(r.id, { price: n(val) });
+                    }
+                  }}
+                  onFocus={(e) => {
+                    // Select all text when focused, so typing replaces the value
+                    e.target.select();
+                  }}
+                  placeholder="Price (editable)"
                   bg="white"
                 />
               </Td>
 
-              <Td>
-                <HStack spacing={2}>
-                  <Input
-                    size="sm" type="number"
-                    value={r.discount}
-                    onChange={(e) => patch(r.id, { discount: Math.max(0, n(e.target.value)) })}
-                    bg="white"
-                  />
-                  <Select
-                    size="sm" value={r.discountType}
-                    onChange={(e) => patch(r.id, { discountType: e.target.value as POSItem["discountType"] })}
-                    bg="white"
-                  >
-                    <option value="amount">Amount</option>
-                    <option value="percentage">%</option>
-                  </Select>
-                </HStack>
-              </Td>
-
-              <Td><Input size="sm" value={r.subTotal.toFixed(2)} isReadOnly bg="gray.50" /></Td>
               <Td><Input size="sm" value={r.total.toFixed(2)} isReadOnly bg="gray.50" /></Td>
 
               <Td>
@@ -214,7 +232,7 @@ export default function POSItemsTable({ items, onChange, searchItems }: Props) {
           ))}
 
           <Tr>
-            <Td colSpan={10}>
+            <Td colSpan={9}>
               <Button onClick={add} size="sm" variant="outline" leftIcon={<Add size={16} color="currentColor" />} w="full">
                 Add Item
               </Button>
@@ -232,6 +250,7 @@ function NameAutocomplete({ value, onChange, searchItems, onSelect }: {
   searchItems: (q: string) => Promise<SuggestedItem[]>;
   onSelect: (s: SuggestedItem) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState(value ?? "");
   const [loading, setLoading] = useState(false);
@@ -239,6 +258,11 @@ function NameAutocomplete({ value, onChange, searchItems, onSelect }: {
   const [anchor, setAnchor] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const timer = useRef<any>(null);
+  const { isOpen: isCreateModalOpen, onOpen: onCreateModalOpen, onClose: onCreateModalClose } = useDisclosure();
+  const [isCreating, setIsCreating] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemDescription, setNewItemDescription] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
 
   useEffect(() => setQ(value ?? ""), [value]);
   const updateAnchor = () => {
@@ -254,63 +278,217 @@ function NameAutocomplete({ value, onChange, searchItems, onSelect }: {
     searchItems(term).then(res => { setItems(res); setOpen(true); }).finally(() => setLoading(false));
   };
 
+  const handleCreateNewItem = async () => {
+    if (!newItemName.trim()) {
+      toast.error(t("Item name is required"));
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", newItemName.trim());
+      if (newItemDescription.trim()) {
+        formData.append("description", newItemDescription.trim());
+      }
+      if (newItemPrice) {
+        formData.append("price", newItemPrice);
+      }
+      formData.append("isAvailable", "true");
+      
+      // Add required array fields (empty arrays)
+      formData.append("chargeIds[]", "");
+      formData.append("addonIds[]", "");
+      formData.append("variantIds[]", "");
+
+      const { data } = await axios.post(`/api/menu-items`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (data?.content?.id) {
+        const newItem: SuggestedItem = {
+          id: data.content.id,
+          name: data.content.name,
+          description: data.content.description,
+          price: data.content.price,
+          imageUrl: data.content.image?.url,
+          variants: data.content.variants || [],
+          addons: data.content.addons || [],
+        };
+        toast.success(t("Menu item created successfully"));
+        onSelect(newItem);
+        setOpen(false);
+        onCreateModalClose();
+        setNewItemName("");
+        setNewItemDescription("");
+        setNewItemPrice("");
+      } else {
+        toast.error(t(data?.message) || t("Failed to create menu item"));
+      }
+    } catch (e: any) {
+      if (e?.response?.data?.message) {
+        toast.error(t(e.response.data.message));
+      } else {
+        toast.error(t("Failed to create menu item"));
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleCreateClick = () => {
+    setNewItemName(q.trim());
+    onCreateModalOpen();
+    setOpen(false);
+  };
+
   return (
-    <Box position="relative">
-      <Input
-        ref={inputRef}
-        size="sm"
-        value={q}
-        onChange={(e) => {
-          const term = e.target.value;
-          setQ(term);
-          onChange(term);
-          clearTimeout(timer.current);
-          timer.current = setTimeout(() => runSearch(term), 250);
-        }}
-        onFocus={() => { updateAnchor(); q && runSearch(q); }}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Type to search..."
-        bg="white"
-      />
-      {open && (
-        <Portal>
-          <Box
-            position="absolute"
-            top={`${anchor.top}px`}
-            left={`${anchor.left}px`}
-            w={`${anchor.width}px`}
-            zIndex={2000}
-            bg="white"
-            border="1px solid"
-            borderColor="gray.200"
-            rounded="md"
-            maxH="240px"
-            overflowY="auto"
-            boxShadow="sm"
-          >
-            {loading ? (
-              <HStack p={2}><Spinner size="sm" /><Text fontSize="sm">Searching…</Text></HStack>
-            ) : items.length === 0 ? (
-              <Text p={2} fontSize="sm" color="gray.500">No matches</Text>
-            ) : (
-              items.map((it) => (
-                <Box
-                  key={it.id}
-                  p={2}
-                  _hover={{ bg: "gray.50", cursor: "pointer" }}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => { onSelect(it); setOpen(false); }}
-                >
-                  <Text fontSize="sm" fontWeight="medium">{it.name}</Text>
-                  {it.description && <Text fontSize="xs" color="gray.500">{it.description}</Text>}
-                  {typeof it.price === "number" && <Text fontSize="xs">${it.price.toFixed(2)}</Text>}
+    <>
+      <Box position="relative">
+        <Input
+          ref={inputRef}
+          size="sm"
+          value={q}
+          onChange={(e) => {
+            const term = e.target.value;
+            setQ(term);
+            onChange(term);
+            clearTimeout(timer.current);
+            timer.current = setTimeout(() => runSearch(term), 250);
+          }}
+          onFocus={() => { updateAnchor(); q && runSearch(q); }}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Type to search, create new, or edit name..."
+          bg="white"
+        />
+        {open && (
+          <Portal>
+            <Box
+              position="absolute"
+              top={`${anchor.top}px`}
+              left={`${anchor.left}px`}
+              w={`${anchor.width}px`}
+              zIndex={2000}
+              bg="white"
+              border="1px solid"
+              borderColor="gray.200"
+              rounded="md"
+              maxH="240px"
+              overflowY="auto"
+              boxShadow="sm"
+            >
+              {loading ? (
+                <HStack p={2}><Spinner size="sm" /><Text fontSize="sm">Searching…</Text></HStack>
+              ) : items.length === 0 ? (
+                <Box>
+                  <Text p={2} fontSize="sm" color="gray.500">No matches found</Text>
+                  {q.trim() && (
+                    <Box
+                      p={2}
+                      borderTop="1px solid"
+                      borderColor="gray.200"
+                      _hover={{ bg: "blue.50", cursor: "pointer" }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleCreateClick}
+                    >
+                      <HStack>
+                        <Add size={16} />
+                        <Text fontSize="sm" fontWeight="medium" color="blue.600">
+                          Create new item: "{q}"
+                        </Text>
+                      </HStack>
+                    </Box>
+                  )}
                 </Box>
-              ))
-            )}
-          </Box>
-        </Portal>
-      )}
-    </Box>
+              ) : (
+                <>
+                  {items.map((it) => (
+                    <Box
+                      key={it.id}
+                      p={2}
+                      _hover={{ bg: "gray.50", cursor: "pointer" }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { onSelect(it); setOpen(false); }}
+                    >
+                      <Text fontSize="sm" fontWeight="medium">{it.name}</Text>
+                      {it.description && <Text fontSize="xs" color="gray.500">{it.description}</Text>}
+                      {typeof it.price === "number" && <Text fontSize="xs">${it.price.toFixed(2)}</Text>}
+                    </Box>
+                  ))}
+                  {q.trim() && (
+                    <Box
+                      p={2}
+                      borderTop="1px solid"
+                      borderColor="gray.200"
+                      _hover={{ bg: "blue.50", cursor: "pointer" }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleCreateClick}
+                    >
+                      <HStack>
+                        <Add size={16} />
+                        <Text fontSize="sm" fontWeight="medium" color="blue.600">
+                          Create new item: "{q}"
+                        </Text>
+                      </HStack>
+                    </Box>
+                  )}
+                </>
+              )}
+            </Box>
+          </Portal>
+        )}
+      </Box>
+
+      <Modal isOpen={isCreateModalOpen} onClose={onCreateModalClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t("Create New Menu Item")}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Stack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>{t("Item Name")}</FormLabel>
+                <Input
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  placeholder={t("Enter item name")}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>{t("Description")}</FormLabel>
+                <Textarea
+                  value={newItemDescription}
+                  onChange={(e) => setNewItemDescription(e.target.value)}
+                  placeholder={t("Enter item description")}
+                  rows={3}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>{t("Price")}</FormLabel>
+                <Input
+                  type="number"
+                  value={newItemPrice}
+                  onChange={(e) => setNewItemPrice(e.target.value)}
+                  placeholder={t("Enter price")}
+                />
+              </FormControl>
+            </Stack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onCreateModalClose}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleCreateNewItem}
+              isLoading={isCreating}
+            >
+              {t("Create")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 }
 
@@ -382,7 +560,9 @@ function VariantsCell({ variantDefs, selected, onChange }: {
                     <Input
                       size="xs"
                       type="number"
-                      value={o.price ?? 0}
+                      value={o.price ?? ''}
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         const updated = [...defs];
                         if (updated[di].variantOptions && updated[di].variantOptions[oi]) {
@@ -456,7 +636,9 @@ function AddonsCell({ addonDefs, selected, onChange }: {
                 <Input
                   size="xs"
                   type="number"
-                  value={a.price ?? 0}
+                  value={a.price ?? ''}
+                  placeholder="0"
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
                     const updated = [...defs];
                     updated[ai].price = n(e.target.value);

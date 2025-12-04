@@ -12,6 +12,7 @@ import {
   Radio,
   Stack,
   Text,
+  Textarea,
 } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { match } from 'ts-pattern';
@@ -51,8 +52,11 @@ const FieldRenderer = ({
             </Text>
           </>
         ))
-        .with('text', 'email', 'number', 'tel', () => (
+        .with('text', 'email', 'number', 'tel', 'date', () => (
           <Input {...field} type={item.type} placeholder={t(item.placeholder || '')} />
+        ))
+        .with('textarea', () => (
+          <Textarea {...field} placeholder={t(item.placeholder || '')} rows={4} />
         ))
 
         .with('password', () => (

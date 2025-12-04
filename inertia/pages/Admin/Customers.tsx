@@ -3,9 +3,6 @@ import { Badge } from '@chakra-ui/react';
 import { SortingState } from '@tanstack/react-table';
 import DataTable from '@/components/common/DataTable';
 import NewCustomer from '@/components/Admin/Customers/NewCustomer';
-import DeleteCustomer from '@/components/Admin/Customers/DeleteCustomer';
-import EditCustomer from '@/components/Admin/Customers/EditCustomer';
-import ViewCustomer from '@/components/Admin/Customers/ViewCustomer';
 import Layout from '@/components/common/Layout';
 import useDebounce from '@/hooks/useDebounce';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +10,7 @@ import CustomerBulkUpdateBar from '@/components/Admin/Customers/CustomerBulkUpda
 import ToolBar from '@/components/Admin/ToolBar';
 import useTableData from '@/data/use_table_data';
 import FilterCustomer from '@/components/Admin/Customers/FilterCustomer';
+import CustomerActionsMenu from '@/components/Admin/Customers/CustomerActionsMenu';
 
 // filter options types
 type FilterOptions = Partial<{
@@ -183,12 +181,9 @@ export default function Customers() {
             {
               accessorKey: 'actions',
               header: () => t('Actions'),
+              enableSorting: false,
               cell: ({ row }) => (
-                <div className="flex gap-2">
-                  <ViewCustomer customer={row.original} refresh={refresh} />
-                  <DeleteCustomer isIconButton id={row.original.id} refresh={refresh} />
-                  <EditCustomer isIconButton customer={row.original} refresh={refresh} />
-                </div>
+                <CustomerActionsMenu customer={row.original} refresh={refresh} />
               ),
             },
           ]}

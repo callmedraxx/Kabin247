@@ -1,0 +1,18 @@
+# Override .gitignore to allow .env files
+# First ignore all .env variants
+.env*
+
+# Then explicitly allow the main .env file
+!.env
+
+# Keep other ignore patterns from .gitignore
+node_modules/
+build/
+tmp/
+public/assets/
+npm-debug.log
+yarn-error.log
+.fleet/
+.idea/
+.vscode/
+.DS_Store

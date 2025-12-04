@@ -7,14 +7,21 @@ export const orderValidator = vine.compile(
     userId: vine
       .number()
       .exists(async (db, value) => {
-        return (
-          db.from('users').where('id', value).andWhere('role_id', Roles.CUSTOMER).first() || false
-        );
+        // Skip validation if userId is 0, null, or undefined (guest order or new user being created)
+        if (!value || value === 0) {
+          return true;
+        }
+        // Validate that the user exists and has CUSTOMER role
+        const user = await db.from('users').where('id', value).andWhere('role_id', Roles.CUSTOMER).first();
+        return !!user;
       })
-      .optional(),
-    type: vine.enum(['dine_in', 'delivery', 'pickup']),
+      .optional()
+      .nullable(),
+    type: vine.enum(['dine_in', 'delivery', 'pickup', 'qe_serv_hub']),
     manualDiscount: vine.number().optional(),
-    paymentType: vine.enum(['cash', 'card', 'paypal', 'stripe']),
+    specialtyItemShoppingFee: vine.number().optional(),
+    serviceCharge: vine.number().optional(),
+    paymentType: vine.enum(['card', 'ach', 'paypal', 'stripe']),
     customerNote: vine.string().nullable().optional(),
     note: vine.string().trim().optional(),
     packagingNote: vine.string().trim().optional(),
@@ -74,7 +81,7 @@ export const orderValidator = vine.compile(
 
 export const orderCalculationValidator = vine.compile(
   vine.object({
-    type: vine.enum(['dine_in', 'delivery', 'pickup']),
+    type: vine.enum(['dine_in', 'delivery', 'pickup', 'qe_serv_hub']),
     manualDiscount: vine.number().optional(),
     orderItems: vine.array(
       vine.object({
@@ -131,9 +138,9 @@ export const orderUpdateValidator = vine.compile(
         );
       })
       .optional(),
-    type: vine.enum(['dine_in', 'delivery', 'pickup']),
+    type: vine.enum(['dine_in', 'delivery', 'pickup', 'qe_serv_hub']),
     manualDiscount: vine.number().optional(),
-    paymentType: vine.enum(['cash', 'card', 'paypal', 'stripe']),
+    paymentType: vine.enum(['card', 'ach', 'paypal', 'stripe']),
     deliveryDate: vine.string().trim().optional().requiredWhen('type', '=', 'delivery'),
     vendorCost: vine.number().optional(),
     status: vine.enum((field) => {
@@ -235,6 +242,16 @@ export const bulkCustomUpdateValidator = vine.compile(
       })
       .optional(),
     paymentStatus: vine.enum(['paid', 'payment_requested', 'unpaid']).optional()
+  })
+);
+
+export const bulkDeleteValidator = vine.compile(
+  vine.object({
+    ids: vine
+      .array(vine.number())
+      .distinct()
+      .compact()
+      .use(idsExist({ table: 'orders', column: 'id' })),
   })
 );
 

@@ -113,10 +113,10 @@ export default function ActiveOrders() {
                   <Tab>{t('All')}</Tab>
                   <Tab>{t('Quote Pending')}</Tab>
                   <Tab>{t('Quote Sent')}</Tab>
-                  <Tab>{t('Awaiting Vendor Quote')}</Tab>
-                  <Tab>{t('Awaiting Vendor Confirmation')}</Tab>
+                  <Tab>{t('Awaiting Vendor Q.')}</Tab>
+                  <Tab>{t('Awaiting Vendor C.')}</Tab>
                   <Tab>{t('Vendor Confirmed')}</Tab>
-                  <Tab>{t('Awaiting Client Confirmation')}</Tab>
+                  <Tab>{t('Awaiting Client C.')}</Tab>
                   <Tab>{t('Client Confirmed')}</Tab>
                 </TabList>
                 {!isOpen && (

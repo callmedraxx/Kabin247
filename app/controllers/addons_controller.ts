@@ -54,7 +54,7 @@ export default class AddonsController {
   async index({ logger, request, response, auth }: HttpContext) {
     const { page, limit, ...input } = request.qs();
     try {
-      const dataQuery = (Addon as any).$filter(input)
+      const dataQuery = Addon.filter(input)
         .if(auth.user!.roleId === Roles.CUSTOMER, (query: any) => {
           query.where('isAvailable', true);
         })

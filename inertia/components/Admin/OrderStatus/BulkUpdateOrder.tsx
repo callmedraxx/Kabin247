@@ -21,6 +21,7 @@ import { ArrowDown2 } from 'iconsax-react';
 import React from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
+import BulkDeleteButton from '@/components/common/BulkDeleteButton';
 
 const orderStatus = new OrderStatus();
 
@@ -105,6 +106,27 @@ export default function BulkUpdateOrder({ rows }: { rows: Record<string, any>[] 
     setAirportSearch('');
     setAirportOptions([]);
     await updateBulkStatus({ deliveryAirportId: airport.id });
+  };
+
+  // delete selected rows
+  const deleteSelectedRows = () => {
+    toast.promise(
+      axios.delete('/api/orders/bulk/delete', {
+        data: {
+          ids: rows.map((row: any) => row.id),
+        },
+      }),
+      {
+        loading: t('Deleting...'),
+        success: () => {
+          mutate((key: string) => key.startsWith('/api/orders'));
+          return t('Orders deleted successfully');
+        },
+        error: () => {
+          return t('Failed to delete orders');
+        },
+      }
+    );
   };
 
   return (
@@ -243,6 +265,9 @@ export default function BulkUpdateOrder({ rows }: { rows: Record<string, any>[] 
           </MenuOptionGroup>
         </MenuList>
       </Menu>
+
+      {/* Bulk delete button */}
+      <BulkDeleteButton onDelete={deleteSelectedRows} />
     </div>
   );
 }

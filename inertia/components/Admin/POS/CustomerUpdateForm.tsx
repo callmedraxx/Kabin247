@@ -10,6 +10,7 @@ import {
   Input,
   Spinner,
   Text,
+  Textarea,
 } from '@chakra-ui/react';
 import { Field, Form, Formik } from 'formik';
 import { Minus, Location, SearchNormal } from 'iconsax-react';
@@ -35,6 +36,9 @@ export default function CustomerInsertForm({
   const [options, setOptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editingAirport, setEditingAirport] = useState(false);
+  const [selectedAirportName, setSelectedAirportName] = useState(
+    customer?.airport?.fboName || customer?.airport?.name || ''
+  );
   const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
@@ -46,7 +50,11 @@ export default function CustomerInsertForm({
     setIsLoading(true);
     axios
       .get(`/api/airports?q=${debouncedSearch}`)
-      .then((res) => setOptions(res.data || []))
+      .then((res) => {
+        // Handle different response formats
+        const airports = res.data?.results || res.data?.data || res.data || [];
+        setOptions(Array.isArray(airports) ? airports : []);
+      })
       .catch(() => toast.error(t('Failed to load airports')))
       .finally(() => setIsLoading(false));
   }, [debouncedSearch, editingAirport]);
@@ -62,6 +70,13 @@ export default function CustomerInsertForm({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Initialize selected airport name when customer changes
+  useEffect(() => {
+    if (customer?.airport) {
+      setSelectedAirportName(customer.airport.fboName || customer.airport.name || '');
+    }
+  }, [customer]);
+
   return (
     <Formik
       initialValues={{
@@ -71,6 +86,7 @@ export default function CustomerInsertForm({
         phoneNumber: customer?.phoneNumber || '',
         address: customer?.airport?.name || '',
         airport: customer?.airport,
+        clientAddress: customer?.clientAddress || '',
       }}
       validationSchema={NewCustomerSchema}
       onSubmit={async (values, actions) => {
@@ -82,7 +98,8 @@ export default function CustomerInsertForm({
           email: values?.email,
           address: values?.airport?.id,
           phoneNumber: values?.phoneNumber,
-          roleId: 6
+          roleId: 6,
+          clientAddress: values?.clientAddress || undefined,
         };
 
         try {
@@ -148,7 +165,7 @@ export default function CustomerInsertForm({
                 className="text-md font-normal flex items-center h-[28px]"
               >
                 <Icon as={Location} size="sm" className="mr-2" />
-                {values.airport?.name || t('Click to select airport')}
+                {selectedAirportName || values.airport?.fboName || values.airport?.name || t('Click to select airport')}
               </Box>
             ) : (
               <>
@@ -190,6 +207,8 @@ export default function CustomerInsertForm({
                         _hover={{ bg: 'gray.100' }}
                         onClick={() => {
                           setFieldValue('airport', airport);
+                          setFieldValue('address', airport.id);
+                          setSelectedAirportName(airport.fboName || airport.name);
                           setSearch('');
                           setOptions([]);
                           setEditingAirport(false);
@@ -218,6 +237,23 @@ export default function CustomerInsertForm({
               </>
             )}
           </Box>
+
+          {/* Full Address Details */}
+          <FormControl>
+            <Field name="clientAddress">
+              {({ field, meta }: any) => (
+                <FormControl isInvalid={meta.errors && meta.touched}>
+                  <Textarea
+                    {...field}
+                    placeholder={t('Full address details (street, city, state, zip code, etc.)')}
+                    rows={3}
+                    resize="vertical"
+                  />
+                  <FormErrorMessage>{t(meta.errors)}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field>
+          </FormControl>
 
           <Button
             type="submit"

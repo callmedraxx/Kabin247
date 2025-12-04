@@ -274,9 +274,9 @@ export default function CancelledBillableTable({
           cell: ({ row }) => (
             <Badge
               variant="subtle"
-              colorScheme={row.original.paymentType === 'cash' ? 'primary' : 'blue'}
+              colorScheme={row.original.paymentType === 'ach' ? 'primary' : 'blue'}
             >
-              {t((row.original.paymentType === 'stripe' || row.original.paymentType === 'card') ? 'card' : 'cash')}
+              {t((row.original.paymentType === 'stripe' || row.original.paymentType === 'card') ? 'card' : (row.original.paymentType === 'ach' ? 'ach' : row.original.paymentType || 'card'))}
             </Badge>
           ),
         },

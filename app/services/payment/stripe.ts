@@ -13,18 +13,18 @@ class StripePayment {
   async createSession(order: Order) {
     try {
       const branding = await useBranding();
-      if (!branding?.siteUrl) {
-        throw new Error('Base URL configuration error');
+      if (!branding?.siteUrl || !branding.business) {
+        throw new Error('Base URL or business configuration error');
       }
       const session = await this.stripe.checkout.sessions.create({
         line_items: [
           {
             price_data: {
-              currency: branding.business.currencyCode?.toLowerCase(),
+              currency: branding.business.currencyCode?.toLowerCase() || 'usd',
               product_data: {
                 name: order.orderNumber,
               },
-              unit_amount: convertStripeCurrency(branding.business.currencyCode, order.grandTotal),
+              unit_amount: convertStripeCurrency(branding.business.currencyCode || 'USD', order.grandTotal),
             },
             quantity: 1,
           },

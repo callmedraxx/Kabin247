@@ -61,9 +61,7 @@ async index({ logger, request, response }: HttpContext) {
   const { page, limit, popularLimit, includePopular, ...input } = request.qs();
   try {
     const { global } = request.params() || {};
-    // Changed from MenuItem.$filter(input) to MenuItem.query().filter(input)
-    const dataQuery = MenuItem.query()
-      .filter(input)
+    const dataQuery = MenuItem.filter(input)
       .if(global, (query: ModelQueryBuilderContract<typeof MenuItem>) => {
         query.where('isAvailable', true);
       })
@@ -377,7 +375,7 @@ async index({ logger, request, response }: HttpContext) {
 
       await menuItem.load('charges');
       await menuItem.load('addons');
-      await menuItem.load('variants', (query) => {
+      await menuItem.load('variants', (query: ModelQueryBuilderContract<typeof Variant>) => {
         query.preload('variantOptions');
       });
 

@@ -53,4 +53,21 @@ export default await Env.create(new URL('../', import.meta.url), {
   SMTP_HOST: Env.schema.string(),
   SMTP_PORT: Env.schema.string(),
   SMTP_EMAIL: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring DKIM signing
+  |----------------------------------------------------------
+  */
+  DKIM_ENABLED: Env.schema.boolean.optional(),
+  DKIM_SELECTOR: Env.schema.string.optional(),
+  DKIM_DOMAIN: Env.schema.string.optional(),
+  DKIM_PRIVATE_KEY_PATH: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Server URL for email links and redirects
+  |----------------------------------------------------------
+  */
+  SERVER_URL: Env.schema.string.optional(),
 });

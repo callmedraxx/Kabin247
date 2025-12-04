@@ -15,14 +15,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(25px);
-  border-radius: 5px;
-  transition: 0.5s ease-in-out;
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 html {
@@ -54,32 +54,300 @@ body {
 }
 
 .chakra-checkbox__control {
-  @apply border-secondary-800 rounded;
+  @apply border-secondary-300 rounded-md transition-all duration-200;
+  
+  &[data-checked] {
+    @apply bg-primary-500 border-primary-500;
+  }
+  
+  &:hover {
+    @apply border-primary-400;
+  }
 }
 
 .chakra-menu {
   &__menu-list {
-    @apply border border-black/10;
+    @apply border border-secondary-200 shadow-lg rounded-lg;
+    backdrop-filter: blur(10px);
   }
   &__menuitem {
-    @apply hover:bg-secondary-100 transition duration-500;
+    @apply hover:bg-secondary-50 transition-all duration-200 rounded-md mx-1;
+    
+    &:focus {
+      @apply bg-secondary-50;
+    }
   }
 }
+
 .chakra-input {
-  @apply border-gray-200 focus-visible:border-primary-500 focus-visible:shadow-none;
+  @apply border-secondary-200 rounded-lg transition-all duration-200;
+  
+  &:hover {
+    @apply border-secondary-300;
+  }
+  
+  &:focus-visible {
+    @apply border-primary-500 shadow-sm;
+    box-shadow: 0 0 0 1px var(--color-primary-500);
+  }
 
   &[aria-invalid='true'] {
-    @apply border-red-500 shadow-none;
+    @apply border-red-500;
+    box-shadow: 0 0 0 1px var(--color-red-500);
   }
 
   &__right-addon,
   &__left-addon {
-    @apply border-gray-200;
+    @apply border-secondary-200 rounded-lg;
   }
 }
 
 .chakra-textarea {
-  @apply border-gray-200;
+  @apply border-secondary-200 rounded-lg transition-all duration-200;
+  
+  &:hover {
+    @apply border-secondary-300;
+  }
+  
+  &:focus-visible {
+    @apply border-primary-500 shadow-sm;
+    box-shadow: 0 0 0 1px var(--color-primary-500);
+  }
+}
+
+.chakra-select {
+  @apply border-secondary-200 rounded-lg transition-all duration-200;
+  
+  &:hover {
+    @apply border-secondary-300;
+  }
+  
+  &:focus-visible {
+    @apply border-primary-500 shadow-sm;
+    box-shadow: 0 0 0 1px var(--color-primary-500);
+  }
+}
+
+.chakra-button {
+  @apply transition-all duration-200 font-medium;
+  
+  &[data-loading] {
+    @apply opacity-70 cursor-not-allowed;
+  }
+  
+  &--solid {
+    &:hover:not([disabled]) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    &:active:not([disabled]) {
+      transform: translateY(0);
+    }
+  }
+  
+  &--outline {
+    &:hover:not([disabled]) {
+      @apply bg-primary-50 border-primary-500;
+      transform: translateY(-1px);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+.chakra-badge {
+  @apply rounded-full px-2.5 py-1 text-xs font-semibold;
+}
+
+.chakra-popover {
+  &__content {
+    @apply rounded-xl shadow-xl border border-secondary-200;
+  }
+}
+
+.chakra-modal {
+  &__content-container {
+    @apply rounded-xl;
+  }
+  
+  &__content {
+    @apply rounded-xl shadow-2xl;
+  }
+}
+
+.chakra-table {
+  @apply rounded-lg overflow-hidden;
+  
+  thead {
+    tr {
+      th {
+        @apply bg-secondary-50 font-semibold text-secondary-800 border-b-2 border-secondary-200;
+        font-size: 0.875rem;
+      }
+    }
+  }
+  
+  tbody {
+    tr {
+      @apply transition-colors duration-150;
+      
+      &:hover {
+        @apply bg-secondary-50;
+      }
+      
+      td {
+        @apply border-b border-secondary-100 text-secondary-900;
+        font-size: 0.875rem;
+      }
+    }
+    
+    tr:nth-of-type(odd) {
+      @apply bg-secondary-50;
+    }
+    
+    tr:nth-of-type(even) {
+      @apply bg-white;
+    }
+  }
+}
+
+.chakra-tooltip {
+  &__popper {
+    z-index: 9999;
+  }
+  
+  &[data-popper-placement] {
+    &[data-popper-placement^="top"] {
+      .chakra-tooltip__arrow {
+        border-top-color: var(--color-secondary-900);
+      }
+    }
+    &[data-popper-placement^="bottom"] {
+      .chakra-tooltip__arrow {
+        border-bottom-color: var(--color-secondary-900);
+      }
+    }
+    &[data-popper-placement^="left"] {
+      .chakra-tooltip__arrow {
+        border-left-color: var(--color-secondary-900);
+      }
+    }
+    &[data-popper-placement^="right"] {
+      .chakra-tooltip__arrow {
+        border-right-color: var(--color-secondary-900);
+      }
+    }
+  }
+}
+
+// Ensure all text elements are readable
+p, span, div, label, h1, h2, h3, h4, h5, h6 {
+  color: inherit;
+}
+
+// Improve button text visibility
+.chakra-button {
+  &[data-loading] {
+    @apply opacity-70 cursor-not-allowed;
+  }
+  
+  &--solid {
+    color: white !important;
+    font-weight: 600;
+    
+    &[disabled] {
+      @apply opacity-60;
+    }
+  }
+  
+  &--outline {
+    color: var(--color-secondary-800) !important;
+    font-weight: 600;
+    
+    &:hover:not([disabled]) {
+      color: var(--color-primary-700) !important;
+    }
+  }
+  
+  &--ghost {
+    color: var(--color-secondary-700) !important;
+    font-weight: 600;
+    
+    &:hover:not([disabled]) {
+      color: var(--color-secondary-900) !important;
+    }
+  }
+}
+
+// Improve badge visibility
+.chakra-badge {
+  font-weight: 600;
+  line-height: 1.5;
+  
+  &--solid {
+    color: white !important;
+  }
+  
+  &--subtle, &--outline {
+    color: var(--color-secondary-800) !important;
+  }
+}
+
+// Improve menu item text
+.chakra-menu__menuitem {
+  color: var(--color-secondary-800) !important;
+  font-weight: 500;
+  
+  &:hover, &:focus {
+    color: var(--color-secondary-900) !important;
+  }
+  
+  &[disabled] {
+    @apply opacity-50;
+  }
+}
+
+// Improve form label visibility
+.chakra-form__label {
+  color: var(--color-secondary-700) !important;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+// Improve text visibility in cards
+.chakra-card {
+  p, span, div {
+    color: var(--color-secondary-900);
+  }
+}
+
+// Ensure placeholder text is visible but clearly a placeholder
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: var(--color-secondary-400) !important;
+  opacity: 1 !important;
+}
+
+// Improve link visibility
+a {
+  color: var(--color-primary-600);
+  font-weight: 500;
+  
+  &:hover {
+    color: var(--color-primary-700);
+    text-decoration: underline;
+  }
+}
+
+// Improve icon button visibility
+.chakra-icon-button {
+  &[aria-label] {
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-500);
+      outline-offset: 2px;
+    }
+  }
 }
 
 .chakra-tabs {

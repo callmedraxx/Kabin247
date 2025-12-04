@@ -2,9 +2,11 @@ import { DateTime } from 'luxon';
 import { BaseModel, column } from '@adonisjs/lucid/orm';
 import { attachment } from '@jrmc/adonis-attachment';
 import type { Attachment } from '@jrmc/adonis-attachment/types/attachment';
+import { Filterable } from 'adonis-lucid-filter';
+import { compose } from '@adonisjs/core/helpers';
 import PaymentMethodFilter from './filters/payment_method_filter.js';
 
-export default class PaymentMethod extends BaseModel {
+export default class PaymentMethod extends compose(BaseModel, Filterable) {
   static $filter = () => PaymentMethodFilter;
 
   @column({ isPrimary: true })

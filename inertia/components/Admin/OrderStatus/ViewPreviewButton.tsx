@@ -45,7 +45,7 @@ import { POSItem } from '@/types/pos_type';
 const orderStatus = new OrderStatus();
 
 type OrderType = 'dine_in' | 'delivery' | 'pickup';
-type PaymentType = 'cash' | 'card' | 'paypal' | 'stripe';
+type PaymentType = 'card' | 'ach' | 'paypal' | 'stripe';
 type PaymentStatus = 'unpaid' | 'payment_requested' | 'paid';
 
 interface OrderItem {
@@ -455,7 +455,7 @@ export default function OrderPreviewButton({
                                 {t(startCase(paymentType))}
                               </MenuButton>
                               <MenuList className="p-1 shadow-lg border border-gray-200">
-                                {['cash', 'card'].map((item) => (
+                                {['card', 'ach'].map((item) => (
                                   <MenuItem
                                     key={item}
                                     onClick={() => setPaymentType(item as PaymentType)}

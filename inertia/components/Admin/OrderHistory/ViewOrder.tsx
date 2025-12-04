@@ -165,7 +165,7 @@ export default function ViewOrder({ orderId }: { orderId: number }) {
                               {t('Payment method')}
                             </Text>
                             <Badge
-                              colorScheme={orderItem?.paymentType === 'cash' ? 'primary' : 'blue'}
+                              colorScheme={orderItem?.paymentType === 'ach' ? 'primary' : 'blue'}
                               w="fit-content"
                             >
                               {t(startCase(orderItem?.paymentType))}

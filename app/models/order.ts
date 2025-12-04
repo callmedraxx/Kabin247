@@ -25,7 +25,7 @@ export default class Order extends compose(BaseModel, Filterable) {
   declare userId: number | null;
 
   @column()
-  declare type: 'dine_in' | 'delivery' | 'pickup';
+  declare type: 'dine_in' | 'delivery' | 'pickup' | 'qe_serv_hub';
 
   @column()
   declare totalQuantity: number;
@@ -70,10 +70,22 @@ export default class Order extends compose(BaseModel, Filterable) {
     prepare: (value: number) => (value ? formatPrecision(value) : 0),
     consume: (value: number) => (value ? formatPrecision(value) : 0),
   })
+  declare specialtyItemShoppingFee: number;
+
+  @column({
+    prepare: (value: number) => (value ? formatPrecision(value) : 0),
+    consume: (value: number) => (value ? formatPrecision(value) : 0),
+  })
+  declare serviceCharge: number;
+
+  @column({
+    prepare: (value: number) => (value ? formatPrecision(value) : 0),
+    consume: (value: number) => (value ? formatPrecision(value) : 0),
+  })
   declare grandTotal: number;
 
   @column()
-  declare paymentType: 'cash' | 'card' | 'paypal' | 'stripe';
+  declare paymentType: 'card' | 'ach' | 'paypal' | 'stripe';
 
   @column()
   declare paymentStatus:
@@ -140,6 +152,8 @@ export default class Order extends compose(BaseModel, Filterable) {
   })
   declare vendorCost: number;
 
+  @column()
+  declare revision: number;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

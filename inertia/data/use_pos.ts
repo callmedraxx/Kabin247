@@ -7,7 +7,6 @@ export interface POSState {
   type: 'delivery';
   paymentType: string;
   subTotal: number;
-  discount: number;
   total: number;
   note: string;
   packagingNote: string;
@@ -54,7 +53,6 @@ export interface POSState {
   updateItemInPOS: (item: POSItem) => void;
   removeItemFromPOS: (item: POSItem) => void;
   setQuantity: (item: POSItem, quantity: number) => void;
-  setDiscount: (discount: number, type: 'percentage' | 'amount') => void;
   changePaymentType: (paymentType: string) => void;
   calculate: () => void;
   resetPOS: () => void;
@@ -68,9 +66,8 @@ const usePOS = create<POSState>()(
     (set, get) => ({
       customer: null,
       type: 'delivery',
-      paymentType: 'stripe',
+      paymentType: 'card',
       subTotal: 0,
-      discount: 0,
       total: 0,
       note: '',
       packagingNote: '',
@@ -150,16 +147,6 @@ const usePOS = create<POSState>()(
         get().calculate();
       },
       changePaymentType: (paymentType: string) => set({ paymentType }),
-      setDiscount: (discount: number, type: 'percentage' | 'amount') => {
-        let discountAmount = 0;
-        if (type === 'percentage') {
-          discountAmount = (discount / 100) * get().subTotal;
-        } else {
-          discountAmount = discount;
-        }
-        set({ discount: discountAmount });
-        get().calculate();
-      },
       setCustomer: (customer: Customer) => set({ customer }),
       setDeliveryAirport: (airport: any) => set({ deliveryAirport: airport }),
       setDeliveryCaterer: (caterer: any) => set({ deliveryCaterer: caterer }),
@@ -300,7 +287,7 @@ const usePOS = create<POSState>()(
             }
           });
           const totalCharges = POSCharges.reduce((acc, charge) => acc + charge.amount, 0);
-          const total = subTotal + totalCharges - state.discount;
+          const total = subTotal + totalCharges;
           return { subTotal, total, POSCharges };
         });
       },
@@ -309,7 +296,6 @@ const usePOS = create<POSState>()(
           POSItems: [],
           POSCharges: [],
           subTotal: 0,
-          discount: 0,
           total: 0,
           note: '',
           packagingNote: '',

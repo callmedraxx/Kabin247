@@ -152,7 +152,7 @@ export default function OrderHistory() {
                       </Badge>
                       <Badge
                         variant="subtle"
-                        colorScheme={row.original.paymentType === 'cash' ? 'primary' : 'blue'}
+                        colorScheme={row.original.paymentType === 'ach' ? 'primary' : 'blue'}
                       >
                         {t(row.original.paymentType)}
                       </Badge>

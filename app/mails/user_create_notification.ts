@@ -14,11 +14,11 @@ export default class UserCreateNotification extends BaseMail {
   constructor(
     user: User,
     password: string,
-    branding: { business: BusinessSetup; siteUrl: string }
+    branding: { business: BusinessSetup | null; siteUrl: string }
   ) {
     super();
     this.user = user;
-    this.appName = branding.business.name || '';
+    this.appName = branding.business?.name || '';
     this.password = password || '';
     this.logo = branding.siteUrl + branding?.business?.logo?.url || '';
   }

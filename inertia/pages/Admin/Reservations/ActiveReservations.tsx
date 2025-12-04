@@ -1,8 +1,5 @@
 import BulkUpdateReservation from '@/components/Admin/ActiveReservations/BulkUpdateReservation';
-import DeleteReservation from '@/components/Admin/ActiveReservations/DeleteReservation';
-import EditReservation from '@/components/Admin/ActiveReservations/EditReservation';
 import FilterReservations from '@/components/Admin/ActiveReservations/FilterReservations';
-import ViewReservation from '@/components/Admin/ActiveReservations/ViewReservation';
 import ToolBar from '@/components/Admin/ToolBar';
 import DataTable from '@/components/common/DataTable';
 import Layout from '@/components/common/Layout';
@@ -24,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
+import ReservationActionsMenu from '@/components/Admin/ActiveReservations/ReservationActionsMenu';
 
 // filter options types
 type FilterOptions = Partial<{
@@ -202,12 +200,9 @@ export default function ActiveReservations() {
             {
               accessorKey: 'actions',
               header: () => t('Actions'),
+              enableSorting: false,
               cell: ({ row }) => (
-                <div className="flex gap-2">
-                  <ViewReservation reservation={row.original} refresh={refresh} isActive />
-                  <EditReservation reservation={row.original} refresh={refresh} isIconButton />
-                  <DeleteReservation id={row.original.id} refresh={refresh} isIconButton />
-                </div>
+                <ReservationActionsMenu reservation={row.original} refresh={refresh} isActive />
               ),
             },
           ]}
